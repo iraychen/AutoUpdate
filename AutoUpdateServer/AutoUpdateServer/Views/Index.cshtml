@@ -1,0 +1,66 @@
+﻿@{
+    Layout = null;
+}
+@inherits Nancy.ViewEngines.Razor.NancyRazorViewBase<dynamic>
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>远图自动更新服务端后台管理系统</title>
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"  />
+    <link href="assets/css/bui-min.css" rel="stylesheet" />
+    <link href="assets/css/dpl-min.css" rel="stylesheet" />
+    <link href="assets/css/main-min.css" rel="stylesheet" />
+</head>
+<body>
+
+    <div class="header">
+
+        <div class="dl-title">
+            远图自动更新系统服务端
+        </div>
+
+        <div class="dl-log">
+            欢迎您，<span class="dl-log-user">@ViewBag.userName</span><a href="LoginOut" title="退出系统" class="dl-log-quit">[退出]</a>
+        </div>
+    </div>
+    <div class="content">
+        <div class="dl-main-nav">
+            <div class="dl-inform"><div class="dl-inform-title"><s class="dl-inform-icon dl-up"></s></div></div>
+            <ul id="J_Nav" class="nav-list ks-clear">
+                <li class="nav-item dl-selected"><div class="nav-item-inner nav-home">系统管理</div></li>
+                <li class="nav-item dl-selected"><div class="nav-item-inner nav-order">医院版本管理</div></li>
+
+            </ul>
+        </div>
+        <ul id="J_NavContent" class="dl-tab-conten"></ul>
+    </div>
+    <script type="text/javascript" src="assets/js/jquery-1.8.1.min.js"></script>
+    <script type="text/javascript" src="assets/js/bui-min.js"></script>
+    <script type="text/javascript" src="assets/js/common/main-min.js"></script>
+    <script type="text/javascript" src="assets/js/config-min.js"></script>
+    <script>
+        BUI.use('common/main', function () {
+            var config = [{
+                id: '1',
+                menu: [{
+                    text: '系统管理',
+                    items: [{ id: '2', text: '用户', href: 'UserManage' }]
+                }]
+            },
+            {
+                id: '3',
+                homePage: '4',
+                menu: [{
+                    text: '医院管理',
+                    items: [{ id: '4', text: '查询版本', href: 'HospitalManange' },
+                            { id: '5', text: '上传版本', href: 'HospitalFileUpLoad' }]
+                }]
+            }];
+            new PageUtil.MainPage({
+                modulesConfig: config
+            });
+        });
+    </script>
+</body>
+</html>

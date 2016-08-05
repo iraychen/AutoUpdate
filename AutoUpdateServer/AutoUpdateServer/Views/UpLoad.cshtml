@@ -1,0 +1,37 @@
+﻿<!DOCTYPE html>
+@*@inherits Nancy.ViewEngines.Razor.NancyRazorViewBase<model>*@
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>主页</title>
+    <style type="text/css">
+        .center {
+           /*border:1px solid red;*/
+           width:500px;
+           height:380px;
+           position:absolute;
+           left:50%;
+           margin-left:-250px;
+           top:50%;
+           margin-top:-200px;
+        }
+    </style>
+</head>
+<body>
+    <div class="center">
+        <div style="text-align:center">
+            <form action="api/UpLoad" method="post" enctype="multipart/form-data">
+
+                <div>
+                    <label>请选择要上传的文件</label>
+                    <input type="file" name="myFile" multiple="multiple" />
+                </div>
+                <div style="margin:20px">
+                    <input type="submit" value="上传" />
+                </div>
+
+            </form>
+        </div>
+    </div>
+</body>
+</html>

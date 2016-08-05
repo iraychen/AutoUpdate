@@ -1,0 +1,146 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" charset="utf-8" />
+    <link rel="stylesheet" type="text/css" href="Content/Css/bootstrap.css" />
+    <link rel="stylesheet" type="text/css" href="Content/Css/bootstrap-responsive.css" />
+    <link rel="stylesheet" type="text/css" href="Content/Css/style.css" />
+    <script type="text/javascript" src="Content/Js/jquery.js"></script>
+    <script type="text/javascript" src="Content/Js/bootstrap.js"></script>
+    <script type="text/javascript" src="Content/Js/ckform.js"></script>
+    <script type="text/javascript" src="Content/Js/common.js"></script>
+
+    <style type="text/css">
+        body {
+            padding-bottom: 40px;
+        }
+
+        .sidebar-nav {
+            padding: 9px 0;
+        }
+
+
+        /* Enable use of floated navbar text */
+        .navbar-text.pull-right {
+            float: none;
+            padding-left: 5px;
+            padding-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <form action="/UserAdd" class="definewidth m20">
+        <table class="table table-bordered table-hover definewidth m10">
+            <tr>
+                <td class="tableleft">真实姓名</td>
+                <td><input type="text" id="name" name="name" onBlur="checkName()" /><span style="color:red;display:none" id="checkNameSpan">当前用户已存在</span></td>
+            </tr>
+            <tr>
+                <td class="tableleft">输入密码</td>
+                <td><input type="password" name="firstPassword" /></td>
+            </tr>
+            <tr>
+                <td class="tableleft">再次输入密码</td>
+                <td><input type="password" name="secondPassword" onBlur="checkPwd()" /><span style="color:red;display:none" id="checkPwdSpan">两次密码不一致</span></td>
+            </tr>
+            <tr>
+                <td class="tableleft">角色</td>
+                <td>
+                    <input type="radio" name="status" value="0" checked /> 普通
+                    <input type="radio" name="status" value="1" />程序员
+                    <input type="radio" name="status" value="2" /> 管理员
+                </td>
+            </tr>
+            <tr>
+                <td class="tableleft"></td>
+                <td>
+                    <button  class="btn btn-primary" type="button" onclick="AddUser()">保存</button> &nbsp;&nbsp;<button type="button" class="btn btn-success" name="backid" id="backid">返回列表</button>
+                </td>
+            </tr>
+        </table>
+    </form>
+</body>
+</html>
+<script>
+    var right=false;
+    $(function () {
+        $('#backid').click(function () {
+            window.location.href = "../UserManage";
+        });
+        $('#checkNameSpan').hide();
+        $('#checkPwdSpan').hide();
+    });
+
+    function checkName()
+    {
+        var name = $('#name').val();
+        if (name == "")
+        {
+            return;
+        }
+        $.ajax({
+            type: "post",
+            url: "checkName/" + name,
+            dataType: "json",
+            success: function (data) {
+                if (data.success == true) {
+                    right = true;
+                    $('#checkNameSpan').hide();
+                }
+                else {
+                    $('#checkNameSpan').show();
+                    right = false
+                }
+            }
+        });
+    }
+
+    function checkPwd() {
+        var fpwd = $("input[name='firstPassword']").val();
+        var spwd = $("input[name='secondPassword']").val();
+        if (fpwd != spwd) {
+            $('#checkPwdSpan').show();
+        }
+        else
+        {
+            $('#checkPwdSpan').hide();
+        }
+    }
+
+    function AddUser()
+    {
+        var name = $("input[name='name']").val();
+        var fpwd = $("input[name='firstPassword']").val();
+        var spwd = $("input[name='secondPassword']").val();
+        if (name == "" || fpwd == "" || spwd == "")
+        {
+            right = false
+            alert("请将信息填写完整");
+            return;
+        }
+        if (!right) {
+            alert("请将信息修改完整");
+            return;
+        }
+        var status = $("input:radio:checked").val();
+        $.ajax({
+            type: "post",
+            url: "UserAdd/" + name + "/" + fpwd + "/" + status,
+            dataType: "json",
+            success: function (data) {
+                if (data.success == true) {
+                    window.location = "../UserManage";
+                }
+                else {
+                    right = false;
+                }
+            }
+        });
+    }
+
+</script>

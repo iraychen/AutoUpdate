@@ -1,0 +1,89 @@
+﻿@{
+    Layout = null;
+}
+@inherits Nancy.ViewEngines.Razor.NancyRazorViewBase<AutoUpdateServer.Model.UserModel>
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" charset="utf-8" />
+    <link rel="stylesheet" type="text/css" href="../../Content/Css/bootstrap.css" />
+    <link rel="stylesheet" type="text/css" href="../../Content/Css/bootstrap-responsive.css" />
+    <link rel="stylesheet" type="text/css" href="../../Content/Css/style.css" />
+    <script type="text/javascript" src="../../Content/Js/jquery.js"></script>
+    <script type="text/javascript" src="../../Content/Js/bootstrap.js"></script>
+    <script type="text/javascript" src="../../Content/Js/ckform.js"></script>
+    <script type="text/javascript" src="../../Content/Js/common.js"></script>
+
+    <style type="text/css">
+        body {
+            padding-bottom: 40px;
+        }
+
+        .sidebar-nav {
+            padding: 9px 0;
+        }
+
+        /* Enable use of floated navbar text */
+        .navbar-text.pull-right {
+            float: none;
+            padding-left: 5px;
+            padding-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <form action="/UserEdit" method="post" class="definewidth m20">
+        <table class="table table-bordered table-hover definewidth m10">
+            <tr>
+                <td class="tableleft">真实姓名</td>
+                <td><input type="text" name="name" value="@Model.Name" /></td>
+            </tr>
+            <tr>
+                <td class="tableleft">输入密码</td>
+                <td><input type="password" name="firstPassword" value="@Model.PassWord" /></td>
+            </tr>
+            <tr>
+                <td class="tableleft">再次输入密码</td>
+                <td><input type="password" name="secondPassword" value="@Model.PassWord" /></td>
+            </tr>
+            <tr>
+                <td class="tableleft">角色</td>
+                <td>
+                    <input type="radio" name="status" value="0" checked /> 普通
+                    <input type="radio" name="status" value="1" />程序员
+                    <input type="radio" name="status" value="2" /> 管理员
+                    <input type="hidden" id="hidStatus" value="@Model.Permission" />
+                </td>
+            </tr>
+            <tr>
+                <td class="tableleft"></td>
+                <td>
+                    <button type="submit" class="btn btn-primary" type="button">保存</button> &nbsp;&nbsp;<button type="button" class="btn btn-success" name="backid" id="backid">返回列表</button>
+                </td>
+            </tr>
+            
+        </table>
+    </form>
+</body>
+</html>
+<script>
+    $(function () {
+        $("input[name=name]").attr("readonly", "readonly");
+        var hidRadio = $("#hidStatus").val();
+        var radios = document.getElementsByName("status");
+        if (hidRadio == "Coder") {
+            radios[1].checked = true;
+        }
+        else if (hidRadio == "Admin") {
+            radios[2].checked = true;
+        }
+        else {
+            radios[0].checked = true;
+        }
+
+        $('#backid').click(function () {
+            window.location.href = "../UserManage";
+        });
+    });
+</script>
