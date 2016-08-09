@@ -85,7 +85,7 @@
         }
         $.ajax({
             type: "post",
-            url: "checkName/" + name,
+            url: "checkUserName/" + name,
             dataType: "json",
             success: function (data) {
                 if (data.success == true) {
@@ -105,6 +105,7 @@
         var spwd = $("input[name='secondPassword']").val();
         if (fpwd != spwd) {
             $('#checkPwdSpan').show();
+             right = false;
         }
         else
         {
@@ -127,6 +128,7 @@
             alert("请将信息修改完整");
             return;
         }
+        right = true;
         var status = $("input:radio:checked").val();
         $.ajax({
             type: "post",

@@ -51,7 +51,7 @@
             </tr>
         </thead>
         @{
-            foreach (var item in ViewBag.Users)
+            foreach (var item in Model)
             {
                 <tr>
                     <td>@item.Name</td>
@@ -92,7 +92,7 @@
     function del(val) {
         if (confirm("确定要删除吗？")) {
             $.ajax({
-                type: "POST",
+                type: "post",
                 url: "UserDelete/" + val.title,
                 dataType: "json",
                 success: function (data) {
@@ -102,7 +102,6 @@
                     alert("error");
                 }
             });
-
         }
     }
 </script>

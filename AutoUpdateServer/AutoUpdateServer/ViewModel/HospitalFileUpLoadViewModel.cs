@@ -1,7 +1,7 @@
 ﻿using AutoUpdateServer.Common;
 using AutoUpdateServer.Config.Model;
+using AutoUpdateServer.Enum;
 using AutoUpdateServer.Model;
-using AutoUpdateServer.Model.Config;
 using AutoUpdateServer.Reponse.Model;
 using Nancy;
 using System;
@@ -24,7 +24,7 @@ namespace AutoUpdateServer.ViewModel
         private HospitalFileUpLoadViewModel() { }
 
         public static readonly HospitalFileUpLoadViewModel instance = new HospitalFileUpLoadViewModel();
-        public ResponseModel BatchFile(IEnumerable<HttpFile> files)
+        public ResponseModel BatchFile(IEnumerable<HttpFile> files, string description)
         {
             ResponseModel responseModel = new ResponseModel(); ;
             try
@@ -40,8 +40,8 @@ namespace AutoUpdateServer.ViewModel
                         foreach (var file in httpFiles)
                         {
                             currentFileName = file.Name;
-                            //2.拿到更新包名称里面包含的hospitalID
-                            var hospitalID = file.Name.Substring(0, currentFileName.LastIndexOf("."));
+                            //2.拿到更新包名称里面包含的HospitalID
+                            var hospitalID = int.Parse(file.Name.Substring(0, currentFileName.LastIndexOf(".")));
                             //3.生成上传的包的地址
                             var fileFullName = Path.Combine(uploadRootDirectory, file.Name);
                             //4.把文件存放到根目录下
@@ -58,19 +58,24 @@ namespace AutoUpdateServer.ViewModel
                                 {
                                     break;
                                 }
-                                //8.根据是否存在versionConfig文件判断是否第一次上传
-                                var versionConfigsListPath = Path.Combine(uploadRootDirectory, ConstFile.VERSIONCONFIGDIRETORYNAME, string.Format(ConstFile.VERSIONCONFIGFILENAME, hospitalID));
-                                if (!File.Exists(versionConfigsListPath))
+                                //8.根据数据库信息判断是否第一次上传
+                                var versionDataBase = SQLiteHelper.VersionQuery(1, hospitalID);
+                                if (versionDataBase != null && versionDataBase.Count > 0)
                                 {
+                                    //}
+                                    //var versionConfigsListPath = Path.Combine(uploadRootDirectory, ConstFile.VERSIONCONFIGDIRETORYNAME, string.Format(ConstFile.VERSIONCONFIGFILENAME, HospitalID));
+                                    //if (!File.Exists(versionConfigsListPath))
+                                    //{
                                     //第一次上传
-                                    FirstCompareAction(upLoadFileDirectoryPath, compareFileNames, hospitalID, versionConfigsListPath);
-                                    continue;
+                                    FirstCompareAction(upLoadFileDirectoryPath, compareFileNames, hospitalID, description);
                                 }
                                 else
                                 {
-                                    CompareAction(upLoadFileDirectoryPath, compareFileNames, hospitalID, versionConfigsListPath);
-                                    continue;
+                                    CompareAction(upLoadFileDirectoryPath, compareFileNames, hospitalID, description);
                                 }
+                                //9.添加信息到数据库表。HospitalVersion
+
+                                continue;
                             }
                             responseModel.Success = false;
                             responseModel.Msg = file.Name + "处理失败";
@@ -89,7 +94,7 @@ namespace AutoUpdateServer.ViewModel
             this.IsRuning = false;
             return responseModel;
         }
-        private static bool CheckCompareInfoConfig(ResponseModel responseModel, string hospitalID, out List<string> compareFileNames)
+        private static bool CheckCompareInfoConfig(ResponseModel responseModel, int hospitalID, out List<string> compareFileNames)
         {
             var compareInfoConfigPath = Path.Combine(uploadRootDirectory, ConstFile.COMPAREINFOCONFIGDIRETORYNAME, string.Format(ConstFile.COMPAREINFOCONFIGFILENAME, hospitalID));
             compareFileNames = new List<string>();
@@ -103,19 +108,53 @@ namespace AutoUpdateServer.ViewModel
             responseModel.Msg = string.Format("未配置：{0}", string.Format(ConstFile.COMPAREINFOCONFIGFILENAME, hospitalID));
             return false;
         }
-        private static void CompareAction(string upLoadFileDirectoryPath, List<string> compareFileNames, string hospitalID, string versionConfigsListPath)
+        private static void FirstCompareAction(string upLoadFileDirectoryPath, List<string> compareFileNames, int hospitalID, string description)
         {
-            //1.找到对比文件2.对比3.修改本地配置
-            var versionConfigsList = FileUtil.XMLLoadData<VersionConfigList>(versionConfigsListPath);
-            var version = CreateVersion(versionConfigsList.NewestVersion);
-            var versionConfig = new VersionConfig();
-            versionConfig.Version = version;
-            versionConfig.HospitalID = hospitalID;
-            versionConfig.UpLoadTime = DateTime.Now;
+            var versionModel = new VersionModel();
+            versionModel.Number = ConstFile.BASEVERSION;
+            versionModel.HospitalID = hospitalID;
+            versionModel.UpLoadTime = DateTime.Now;
+            versionModel.Description = description;
+            versionModel.ID = DateTime.Now.ToString("yyyyMMddhhmmssffff");
+            var dllInfos = new List<DLLModel>();
             compareFileNames.ForEach(p =>
             {
                 var uploadFilePath = Path.Combine(upLoadFileDirectoryPath, p);
-                var localFilePath = Path.Combine(uploadRootDirectory, GetDLLName(versionConfigsList,p));
+                if (File.Exists(uploadFilePath))
+                {
+                    var uploadFileInfo = new FileInfo(uploadFilePath);
+                    var newFileInfo = FileCopy(p, uploadFileInfo, ConstFile.BASEVERSION);
+                    dllInfos.Add(new DLLModel
+                    {
+                        Name = newFileInfo.Name,
+                        Size = newFileInfo.Length,
+                        UpdateStatus = UpdateStatus.ADD,
+                        VersionID = versionModel.ID
+                    });
+                }
+            });
+            SQLiteHelper.Insert<VersionModel>(versionModel);
+            SQLiteHelper.Insert<DLLModel>(dllInfos);
+
+        }
+        private static void CompareAction(string upLoadFileDirectoryPath, List<string> compareFileNames, int hospitalID, string description)
+        {
+            //1.找到对应hospitalid的最新版本2.对比3.修改本地配置
+            var dataBase = SQLiteHelper.VersionQuery(1000, hospitalID);
+            var newestVersionModel = dataBase.FirstOrDefault(p => p.ID == dataBase.Max(t => t.ID));
+            var newestDLLModel = SQLiteHelper.DLLQuery(1000, newestVersionModel.ID);
+            var number = CreateVersion(newestVersionModel.Number);
+            var versionModel = new VersionModel();
+            versionModel.ID = DateTime.Now.ToString("yyyyMMddhhmmssffff");
+            versionModel.Number = number;
+            versionModel.HospitalID = hospitalID;
+            versionModel.UpLoadTime = DateTime.Now;
+            versionModel.Description = description;
+            var dllInfos = new List<DLLModel>();
+            compareFileNames.ForEach(p =>
+            {
+                var uploadFilePath = Path.Combine(upLoadFileDirectoryPath, p);
+                var localFilePath = Path.Combine(uploadRootDirectory, GetDLLName(newestDLLModel, p));
                 var uploadFileInfo = new FileInfo(uploadFilePath);
                 var localFileInfo = new FileInfo(localFilePath);
                 //对比规则：
@@ -126,50 +165,54 @@ namespace AutoUpdateServer.ViewModel
                 {
                     if (!File.Exists(localFilePath))
                     {
-                        var newFileInfo = FileCopy(p, uploadFileInfo, version);
-                        versionConfig.DLLInfos.Add(new DLLInfo
+                        var newFileInfo = FileCopy(p, uploadFileInfo, number);
+                        dllInfos.Add(new DLLModel
                         {
                             Name = newFileInfo.Name,
                             Size = newFileInfo.Length,
-                            UpdateStatus = UpdateStatus.ADD
+                            UpdateStatus = UpdateStatus.ADD,
+                            VersionID = versionModel.ID
                         });
                     }
                     else
                     {
                         if (!isTheSame(new FileInfo(uploadFilePath), new FileInfo(localFilePath)))
                         {
-                            var newFileInfo = FileCopy(p, uploadFileInfo, version);
-                            versionConfig.DLLInfos.Add(new DLLInfo
+                            var newFileInfo = FileCopy(p, uploadFileInfo, number);
+                            dllInfos.Add(new DLLModel
                             {
                                 Name = newFileInfo.Name,
                                 Size = newFileInfo.Length,
-                                UpdateStatus = UpdateStatus.UPDATE
+                                UpdateStatus = UpdateStatus.UPDATE,
+                                VersionID = versionModel.ID
                             });
                         }
                         else
                         {
-                            versionConfig.DLLInfos.Add(new DLLInfo
+                            dllInfos.Add(new DLLModel
                             {
                                 Name = localFileInfo.Name,
                                 Size = localFileInfo.Length,
-                                UpdateStatus = UpdateStatus.KEEP
+                                UpdateStatus = UpdateStatus.KEEP,
+                                VersionID = versionModel.ID
                             });
                         }
                     }
                 }
                 else
                 {
-                    versionConfig.DLLInfos.Add(new DLLInfo
+                    dllInfos.Add(new DLLModel
                     {
                         Name = localFileInfo.Name,
                         Size = localFileInfo.Length,
-                        UpdateStatus = UpdateStatus.DELETE
+                        UpdateStatus = UpdateStatus.DELETE,
+                        VersionID = versionModel.ID
                     });
                 }
             });
-            versionConfigsList.NewestVersion = version;
-            versionConfigsList.VersionConfigs.Add(versionConfig);
-            FileUtil.XMLSaveData<VersionConfigList>(versionConfigsList, versionConfigsListPath);
+            SQLiteHelper.Insert<VersionModel>(versionModel);
+            SQLiteHelper.Insert<DLLModel>(dllInfos);
+
         }
         private static string CreateVersion(string newestVersion)
         {
@@ -191,32 +234,7 @@ namespace AutoUpdateServer.ViewModel
                 return hash1.SequenceEqual(hash2);
             }
         }
-        private static void FirstCompareAction(string upLoadFileDirectoryPath, List<string> compareFileNames, string hospitalID, string versionConfigsListPath)
-        {
-            var versionConfig = new VersionConfig();
-            versionConfig.Version = ConstFile.BASEVERSION;
-            versionConfig.HospitalID = hospitalID;
-            versionConfig.UpLoadTime = DateTime.Now;
-            compareFileNames.ForEach(p =>
-            {
-                var uploadFilePath = Path.Combine(upLoadFileDirectoryPath, p);
-                if (File.Exists(uploadFilePath))
-                {
-                    var uploadFileInfo = new FileInfo(uploadFilePath);
-                    var newFileInfo = FileCopy(p, uploadFileInfo, ConstFile.BASEVERSION);
-                    versionConfig.DLLInfos.Add(new DLLInfo
-                    {
-                        Name = newFileInfo.Name,
-                        Size = newFileInfo.Length,
-                        UpdateStatus = UpdateStatus.ADD
-                    });
-                }
-            });
-            var versionConfigList = new VersionConfigList();
-            versionConfigList.VersionConfigs.Add(versionConfig);
-            versionConfigList.NewestVersion = ConstFile.BASEVERSION;
-            FileUtil.XMLSaveData<VersionConfigList>(versionConfigList, versionConfigsListPath);
-        }
+
         private static FileInfo FileCopy(string compareFileName, FileInfo uploadFileInfo, string version)
         {
             var name = version + "-" + compareFileName;
@@ -275,19 +293,19 @@ namespace AutoUpdateServer.ViewModel
             return true;
 
         }
-        private static string GetDLLName(VersionConfigList versionConfigList, string name)
+        private static string GetDLLName(List<DLLModel> newestDLLModel, string name)
         {
-            string dLLname=string.Empty;
-            var versionConfig = versionConfigList.VersionConfigs.FirstOrDefault(p=>p.Version== versionConfigList.NewestVersion);
-            versionConfig.DLLInfos.ForEach((p)=> 
+            string dLLName = string.Empty;
+            foreach (var p in newestDLLModel)
             {
-                if (p.Name.Substring(0, p.Name.LastIndexOf(".")).Contains(name.Substring(0,name.LastIndexOf("."))) &&
+                if (p.Name.Substring(0, p.Name.LastIndexOf(".")).Contains(name.Substring(0, name.LastIndexOf("."))) &&
                 p.Name.Substring(p.Name.LastIndexOf(".")) == name.Substring(name.LastIndexOf(".")))
                 {
-                    dLLname = p.Name;
+                    dLLName = p.Name;
+                    break;
                 }
-            });
-            return dLLname;
+            }
+            return dLLName;
         }
     }
 }

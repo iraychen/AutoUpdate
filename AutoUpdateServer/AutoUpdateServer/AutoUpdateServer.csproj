@@ -318,7 +318,7 @@
     <Content Include="Views\Show.cshtml" />
     <Content Include="Views\Login.cshtml" />
     <Content Include="Views\Index.cshtml" />
-    <Content Include="Views\HospitalManange.cshtml" />
+    <Content Include="Views\HospitalManage.cshtml" />
     <Content Include="Views\UserManage.cshtml" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -328,6 +328,8 @@
     <Content Include="Views\UserEdit.cshtml" />
     <Content Include="Views\HospitalFileUpLoad.cshtml" />
     <Content Include="Views\VersionManange.cshtml" />
+    <Content Include="Views\HospitalAdd.cshtml" />
+    <Content Include="Views\HospitalEdit.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -345,14 +347,16 @@
     <Compile Include="Common\SQLite.cs" />
     <Compile Include="Common\SQLiteHelper.cs" />
     <Compile Include="Common\ZipHelper.cs" />
+    <Compile Include="Enum\UpdateStatus.cs" />
     <Compile Include="Enum\Permission .cs" />
     <Compile Include="Model\AllFileVersionInfo.cs" />
-    <Compile Include="Model\Config\VersionConfigList.cs" />
+    <Compile Include="Model\DLLModel.cs" />
     <Compile Include="Model\HospitalModel.cs" />
     <Compile Include="Model\Config\CompareInfoConfig.cs" />
     <Compile Include="Model\Reponse\ResponseModel.cs" />
     <Compile Include="Model\UpdatePackageInfo.cs" />
     <Compile Include="Model\UserModel.cs" />
+    <Compile Include="Model\VersionModel.cs" />
     <Compile Include="Modules\Bootstrapper.cs" />
     <Compile Include="Modules\HomeModule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -361,6 +365,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="ViewModel\HospitalManageViewModel.cs" />
     <Compile Include="ViewModel\LoginViewModel.cs" />
     <Compile Include="ViewModel\HospitalFileUpLoadViewModel.cs" />
     <Compile Include="ViewModel\UserManageViewModel.cs" />

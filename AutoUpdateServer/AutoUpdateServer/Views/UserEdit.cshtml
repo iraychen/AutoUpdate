@@ -7,13 +7,13 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width" charset="utf-8" />
-    <link rel="stylesheet" type="text/css" href="../../Content/Css/bootstrap.css" />
-    <link rel="stylesheet" type="text/css" href="../../Content/Css/bootstrap-responsive.css" />
-    <link rel="stylesheet" type="text/css" href="../../Content/Css/style.css" />
-    <script type="text/javascript" src="../../Content/Js/jquery.js"></script>
-    <script type="text/javascript" src="../../Content/Js/bootstrap.js"></script>
-    <script type="text/javascript" src="../../Content/Js/ckform.js"></script>
-    <script type="text/javascript" src="../../Content/Js/common.js"></script>
+    <link rel="stylesheet" type="text/css" href="../Content/Css/bootstrap.css" />
+    <link rel="stylesheet" type="text/css" href="../Content/Css/bootstrap-responsive.css" />
+    <link rel="stylesheet" type="text/css" href="../Content/Css/style.css" />
+    <script type="text/javascript" src="../Content/Js/jquery.js"></script>
+    <script type="text/javascript" src="../Content/Js/bootstrap.js"></script>
+    <script type="text/javascript" src="../Content/Js/ckform.js"></script>
+    <script type="text/javascript" src="../Content/Js/common.js"></script>
 
     <style type="text/css">
         body {
@@ -45,7 +45,7 @@
             </tr>
             <tr>
                 <td class="tableleft">再次输入密码</td>
-                <td><input type="password" name="secondPassword" value="@Model.PassWord" /></td>
+                <td><input type="password" name="secondPassword" onBlur="checkPwd()" value="@Model.PassWord" /></td>
             </tr>
             <tr>
                 <td class="tableleft">角色</td>
@@ -68,7 +68,11 @@
 </body>
 </html>
 <script>
+
+    var right = false;
+
     $(function () {
+        $('#checkPwdSpan').hide();
         $("input[name=name]").attr("readonly", "readonly");
         var hidRadio = $("#hidStatus").val();
         var radios = document.getElementsByName("status");
@@ -86,4 +90,16 @@
             window.location.href = "../UserManage";
         });
     });
+
+    function checkPwd() {
+        var fpwd = $("input[name='firstPassword']").val();
+        var spwd = $("input[name='secondPassword']").val();
+        if (fpwd != spwd) {
+            $('#checkPwdSpan').show();
+            right = false;
+        }
+        else {
+            $('#checkPwdSpan').hide();
+        }
+    }
 </script>

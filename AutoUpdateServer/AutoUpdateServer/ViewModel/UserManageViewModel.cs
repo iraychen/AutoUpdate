@@ -11,14 +11,13 @@ namespace AutoUpdateServer.ViewModel
 {
     public class UserManageViewModel
     {
-        private static SQLiteHelper SQLiteHelper = new SQLiteHelper(new DirectoryInfo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DataBase")));
         public UserManageViewModel()
         {
         }
 
         public static List<UserModel> GetData(string name = null)
         {
-            return SQLiteHelper.Query<UserModel>(100, name);
+            return SQLiteHelper.UserQuery(100, name);
         }
 
         public static bool Insert(string name,string pwd,int status)
