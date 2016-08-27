@@ -159,3 +159,8 @@ F:\AutoUpdate\AutoUpdate\AutoUpdateServer\AutoUpdateServer\obj\Debug\AutoUpdateS
 F:\AutoUpdate\AutoUpdate\AutoUpdateServer\AutoUpdateServer\obj\Debug\AutoUpdateServer.csproj.GenerateResource.Cache
 F:\AutoUpdate\AutoUpdate\AutoUpdateServer\AutoUpdateServer\obj\Debug\AutoUpdateServer.dll
 F:\AutoUpdate\AutoUpdate\AutoUpdateServer\AutoUpdateServer\obj\Debug\AutoUpdateServer.pdb
+F:\AutoUpdate\AutoUpdate\AutoUpdateServer\AutoUpdateServer\bin\Autofac.dll
+F:\AutoUpdate\AutoUpdate\AutoUpdateServer\AutoUpdateServer\bin\Nancy.Authentication.Forms.dll
+F:\AutoUpdate\AutoUpdate\AutoUpdateServer\AutoUpdateServer\bin\Nancy.Bootstrappers.Autofac.dll
+F:\AutoUpdate\AutoUpdate\AutoUpdateServer\AutoUpdateServer\bin\Autofac.xml
+F:\AutoUpdate\AutoUpdate\AutoUpdateServer\AutoUpdateServer\bin\Nancy.Authentication.Forms.xml

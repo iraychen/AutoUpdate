@@ -10,20 +10,18 @@ namespace AutoUpdateServer.ViewModel
 {
     public class LoginViewModel
     {
-        public static bool Verify(List<UserModel> models,string name,string passWord,out Permission permission)
+        public static UserModel Verify(List<UserModel> models,string name,string passWord)
         {
-            permission = new Permission();
             var model = models.FirstOrDefault(t => t.Name == name);
             if (model != null)
             {
                 var md5PassWord = MD5Helper.MD5Encode(passWord);
-                if (md5PassWord == model.PassWord)
+                if (md5PassWord != model.PassWord)
                 {
-                    permission = model.Permission;
-                    return true;
+                    model = null;
                 }
             }
-            return false;
+            return model;
         }
     }
 }

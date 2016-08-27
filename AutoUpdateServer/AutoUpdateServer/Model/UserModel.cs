@@ -7,6 +7,7 @@ using System.Web;
 
 namespace AutoUpdateServer.Model
 {
+    [Serializable]
     public class UserModel
     {
         [PrimaryKey]
