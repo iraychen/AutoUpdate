@@ -20,17 +20,19 @@ namespace AutoUpdateServer.ViewModel
         private static IEnumerable<HttpFile> httpFiles;
         private static List<string> CreateFileOrDiretoryPathList = new List<string>();
         private static string currentFileName = string.Empty;
+        private static string currentUser = string.Empty;
         public bool IsRuning = false;
         private HospitalFileUpLoadViewModel() { }
 
         public static readonly HospitalFileUpLoadViewModel instance = new HospitalFileUpLoadViewModel();
-        public ResponseModel BatchFile(IEnumerable<HttpFile> files, string description)
+        public ResponseModel BatchFile(IEnumerable<HttpFile> files,string user)
         {
             ResponseModel responseModel = new ResponseModel(); ;
             try
             {
                 this.IsRuning = true;
                 httpFiles = files;
+                currentUser = user;
                 if (httpFiles.Count() > 0)
                 {
                     //1.快速检查文件中是否有命名不正确
@@ -59,22 +61,16 @@ namespace AutoUpdateServer.ViewModel
                                     break;
                                 }
                                 //8.根据数据库信息判断是否第一次上传
-                                var versionDataBase = SQLiteHelper.VersionQuery(1, hospitalID);
-                                if (versionDataBase != null && versionDataBase.Count > 0)
+                                var versionData = SQLiteHelper.VersionQuery(1, hospitalID);
+                                if (versionData != null && versionData.Count ==0)
                                 {
-                                    //}
-                                    //var versionConfigsListPath = Path.Combine(uploadRootDirectory, ConstFile.VERSIONCONFIGDIRETORYNAME, string.Format(ConstFile.VERSIONCONFIGFILENAME, HospitalID));
-                                    //if (!File.Exists(versionConfigsListPath))
-                                    //{
                                     //第一次上传
-                                    FirstCompareAction(upLoadFileDirectoryPath, compareFileNames, hospitalID, description);
+                                    FirstCompareAction(upLoadFileDirectoryPath, compareFileNames, hospitalID);
                                 }
                                 else
                                 {
-                                    CompareAction(upLoadFileDirectoryPath, compareFileNames, hospitalID, description);
+                                    CompareAction(upLoadFileDirectoryPath, compareFileNames, hospitalID);
                                 }
-                                //9.添加信息到数据库表。HospitalVersion
-
                                 continue;
                             }
                             responseModel.Success = false;
@@ -108,14 +104,14 @@ namespace AutoUpdateServer.ViewModel
             responseModel.Msg = string.Format("未配置：{0}", string.Format(ConstFile.COMPAREINFOCONFIGFILENAME, hospitalID));
             return false;
         }
-        private static void FirstCompareAction(string upLoadFileDirectoryPath, List<string> compareFileNames, int hospitalID, string description)
+        private static void FirstCompareAction(string upLoadFileDirectoryPath, List<string> compareFileNames, int hospitalID)
         {
             var versionModel = new VersionModel();
             versionModel.Number = ConstFile.BASEVERSION;
             versionModel.HospitalID = hospitalID;
             versionModel.UpLoadTime = DateTime.Now;
-            versionModel.Description = description;
             versionModel.ID = DateTime.Now.ToString("yyyyMMddhhmmssffff");
+            versionModel.User = currentUser;
             var dllInfos = new List<DLLModel>();
             compareFileNames.ForEach(p =>
             {
@@ -137,7 +133,7 @@ namespace AutoUpdateServer.ViewModel
             SQLiteHelper.Insert<DLLModel>(dllInfos);
 
         }
-        private static void CompareAction(string upLoadFileDirectoryPath, List<string> compareFileNames, int hospitalID, string description)
+        private static void CompareAction(string upLoadFileDirectoryPath, List<string> compareFileNames, int hospitalID)
         {
             //1.找到对应hospitalid的最新版本2.对比3.修改本地配置
             var dataBase = SQLiteHelper.VersionQuery(1000, hospitalID);
@@ -149,7 +145,7 @@ namespace AutoUpdateServer.ViewModel
             versionModel.Number = number;
             versionModel.HospitalID = hospitalID;
             versionModel.UpLoadTime = DateTime.Now;
-            versionModel.Description = description;
+            versionModel.User = currentUser;
             var dllInfos = new List<DLLModel>();
             compareFileNames.ForEach(p =>
             {
@@ -247,6 +243,10 @@ namespace AutoUpdateServer.ViewModel
             var dir = newFileInfo.Directory;
             if (!dir.Exists)
                 dir.Create();
+            if (File.Exists(newFileInfo.FullName))
+            {
+                File.Delete(newFileInfo.FullName);
+            }
             uploadFileInfo.CopyTo(newFileInfo.FullName);
             return newFileInfo;
         }

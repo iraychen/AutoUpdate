@@ -11,7 +11,7 @@ namespace AutoUpdateServer.Moudles
     public class HomeModule : NancyModule
     {
         private static List<UserModel> users;
-        public List<UserModel> Users
+        private List<UserModel> Users
         {
             get
             {
@@ -24,7 +24,7 @@ namespace AutoUpdateServer.Moudles
         }
 
         private static List<HospitalModel> hospitals;
-        public List<HospitalModel> Hospitals
+        private  List<HospitalModel> Hospitals
         {
             get
             {
@@ -35,6 +35,7 @@ namespace AutoUpdateServer.Moudles
                 hospitals = value;
             }
         }
+
         public HomeModule()
         {
             #region LoginRemote
@@ -103,7 +104,7 @@ namespace AutoUpdateServer.Moudles
             {
                 var reaponseModel = new ResponseModel();
                 string name = p.Name;
-                if (this.Users == null || this.Users.FirstOrDefault(t => t.Name == name) == null)
+                if (this.Users?.FirstOrDefault(t => t.Name == name) == null)
                 {
                     reaponseModel.Success = true;
                 }
@@ -115,17 +116,16 @@ namespace AutoUpdateServer.Moudles
             };
             Get["UserAdd"] = _ =>
             {
-                //if (Request.Session["userName"] == null)
-                //{
-                //    return View["Login"];
-                //}
+                if (Request.Session["userName"] == null)
+                {
+                    return View["Login"];
+                }
                 return View["UserAdd"];
             };
             Post["UserAdd/{Name}/{PassWord}/{Status}"] = p =>
             {
                 var responseModel = new ResponseModel();
-                var bo = UserManageViewModel.Insert(p.Name, p.PassWord, p.Status);
-                if (bo)
+                if (UserManageViewModel.Insert(p.Name, p.PassWord, p.Status))
                 {
                     this.Users = UserManageViewModel.GetData();
                     responseModel.Success = true;
@@ -138,7 +138,7 @@ namespace AutoUpdateServer.Moudles
                 {
                     return View["Login"];
                 }
-                var model = this.Users.FirstOrDefault(t => t.Name == p.Name);
+                var model = this.Users?.FirstOrDefault(t => t.Name == p.Name);
                 if (model != null)
                 {
                     return View["UserEdit", model];
@@ -156,11 +156,10 @@ namespace AutoUpdateServer.Moudles
                 var reponseMode = new ResponseModel();
                 if (!string.IsNullOrEmpty(p.Name))
                 {
-                    var model = this.Users.FirstOrDefault(t => t.Name == p.Name);
+                    var model = this.Users?.FirstOrDefault(t => t.Name == p.Name);
                     if (model != null)
                     {
-                        var bo = UserManageViewModel.Delete(model);
-                        if (bo)
+                        if (UserManageViewModel.Delete(model))
                         {
                             this.Users = UserManageViewModel.GetData();
                             reponseMode.Success = true;
@@ -189,13 +188,14 @@ namespace AutoUpdateServer.Moudles
                 }
                 string name = Request.Form["name"];
                 this.Hospitals = HospitalManageViewModel.GetData(name);
+                ViewBag["permission"] = Session["permission"];
                 return View["HospitalManage", this.Hospitals];
             };
             Post["checkHospitalID/{HospitalID}"] = p =>
             {
                 var reaponseModel = new ResponseModel();
                 int HospitalID = p.HospitalID;
-                if (this.Hospitals == null || this.Hospitals.FirstOrDefault(t => t.ID == HospitalID) == null)
+                if (this.Hospitals?.FirstOrDefault(t => t.ID == HospitalID) == null)
                 {
                     reaponseModel.Success = true;
                 }
@@ -216,8 +216,7 @@ namespace AutoUpdateServer.Moudles
             Post["HospitalAdd/{HospitalID}/{Name}"] = p =>
             {
                 var responseModel = new ResponseModel();
-                var bo = HospitalManageViewModel.Insert(p.HospitalID, p.Name);
-                if (bo)
+                if (HospitalManageViewModel.Insert(p.HospitalID, p.Name))
                 {
                     this.Hospitals = HospitalManageViewModel.GetData();
                     responseModel.Success = true;
@@ -230,12 +229,11 @@ namespace AutoUpdateServer.Moudles
                 {
                     return View["Login"];
                 }
-                var model = this.Hospitals.FirstOrDefault(t => t.ID == p.HospitalID);
+                var model = this.Hospitals?.FirstOrDefault(t => t.ID == p.HospitalID);
                 if (model != null)
                 {
                     return View["HospitalEdit", model];
                 }
-
                 ViewBag["permission"] = Session["permission"];
                 return View["HospitalManage", this.Hospitals];
             };
@@ -249,11 +247,10 @@ namespace AutoUpdateServer.Moudles
             Post["HospitalDelete/{HospitalID}"] = p =>
             {
                 var reponseMode = new ResponseModel();
-                var model = this.Hospitals.FirstOrDefault(t => t.ID == p.HospitalID);
+                var model = this.Hospitals?.FirstOrDefault(t => t.ID == p.HospitalID);
                 if (model != null)
                 {
-                    var bo = HospitalManageViewModel.Delete(model);
-                    if (bo)
+                    if (HospitalManageViewModel.Delete(model))
                     {
                         this.Hospitals = HospitalManageViewModel.GetData();
                         reponseMode.Success = true;
@@ -262,12 +259,46 @@ namespace AutoUpdateServer.Moudles
                 return Response.AsJson(reponseMode);
             };
 
+            Get["VersionManage/{HospitalID}"] = p =>
+            {
+                if (Request.Session["userName"] == null)
+                {
+                    return View["Login"];
+                }
+                var models =VersionManageViewModel.GetModels(p.HospitalID);
+                Session["versionModels"] = models;
+                return View["VersionManage", models];
+            };
+            Get["VersionEdit/{VersionID}"] = p =>
+            {
+                if (Request.Session["userName"] == null)
+                {
+                    return View["Login"];
+                }
+                var models = (List<VersionModel>)Session["versionModels"];
+                var model =models==null?null: models.FirstOrDefault(s => s.ID==p.VersionID);
+                if (model != null)
+                {
+                    return View["VersionEdit", model];
+                }
+                return View["HospitalManage", this.Hospitals];
+            };
+            Post["VersionEdits/"] = _ =>
+            {
+                VersionManageViewModel.Update(Request.Form);
+                this.Hospitals = HospitalManageViewModel.GetData();
+                ViewBag["permission"] = Session["permission"];
+                return View["HospitalManage", this.Hospitals];
+            };
+            Post["VersionDelete/{VersionID}"] = p =>
+            {
+                return null;
+            };
 
 
+                #endregion
 
-            #endregion
-
-            #region UpLoadRemote
+                #region UpLoadRemote
             Get["HospitalFileUpLoad"] = _ =>
             {
                 if (Request.Session["userName"] == null)
@@ -278,15 +309,9 @@ namespace AutoUpdateServer.Moudles
                 return View["HospitalFileUpLoad"];
             };
 
-            Post["api/HospitalFileUpLoad/{Description}"] = p =>
+            Post["api/HospitalFileUpLoad"] = p =>
             {
                 var model = new ResponseModel();
-                if (string.IsNullOrEmpty(p.Description))
-                {
-                    model.Success = false;
-                    model.Msg = "描述信息为空";
-                    return Response.AsJson<ResponseModel>(model);
-                }
                 if (HospitalFileUpLoadViewModel.instance.IsRuning)
                 {
                     model.Success = false;
@@ -296,13 +321,13 @@ namespace AutoUpdateServer.Moudles
                 {
                     lock (HospitalFileUpLoadViewModel.instance)
                     {
-                        model = HospitalFileUpLoadViewModel.instance.BatchFile(Request.Files, p.Description);
+                        string user = Request.Session["userName"].ToString();
+                        model = HospitalFileUpLoadViewModel.instance.BatchFile(Request.Files, user);
                     }
                 }
                 return Response.AsJson<ResponseModel>(model);
             };
             #endregion
-
 
             #region Other
             Get["api/down/{name}"] = _ =>

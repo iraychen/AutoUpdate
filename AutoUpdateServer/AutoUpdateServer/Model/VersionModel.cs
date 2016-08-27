@@ -22,6 +22,8 @@ namespace AutoUpdateServer.Model
         public DateTime UpLoadTime { get; set; }
 
         [NotNull]
+        public string User { get; set; }
+
         public string Description { get; set; }
     }
 }

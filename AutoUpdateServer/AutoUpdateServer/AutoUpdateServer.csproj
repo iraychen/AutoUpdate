@@ -327,9 +327,10 @@
     <Content Include="Views\UserAdd.cshtml" />
     <Content Include="Views\UserEdit.cshtml" />
     <Content Include="Views\HospitalFileUpLoad.cshtml" />
-    <Content Include="Views\VersionManange.cshtml" />
+    <Content Include="Views\VersionManage.cshtml" />
     <Content Include="Views\HospitalAdd.cshtml" />
     <Content Include="Views\HospitalEdit.cshtml" />
+    <Content Include="Views\VersionEdit.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -369,6 +370,7 @@
     <Compile Include="ViewModel\LoginViewModel.cs" />
     <Compile Include="ViewModel\HospitalFileUpLoadViewModel.cs" />
     <Compile Include="ViewModel\UserManageViewModel.cs" />
+    <Compile Include="ViewModel\VersionManageViewModel.cs" />
   </ItemGroup>
   <ItemGroup />
   <PropertyGroup>

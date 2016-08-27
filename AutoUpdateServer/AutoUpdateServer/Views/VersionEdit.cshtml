@@ -1,0 +1,79 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" charset="utf-8" />
+    <link rel="stylesheet" type="text/css" href="Content/Css/bootstrap.css" />
+    <link rel="stylesheet" type="text/css" href="Content/Css/bootstrap-responsive.css" />
+    <link rel="stylesheet" type="text/css" href="Content/Css/style.css" />
+    <script type="text/javascript" src="Content/Js/jquery.js"></script>
+    <script type="text/javascript" src="Content/Js/bootstrap.js"></script>
+    <script type="text/javascript" src="Content/Js/ckform.js"></script>
+    <script type="text/javascript" src="Content/Js/common.js"></script>
+
+    <style type="text/css">
+        body {
+            padding-bottom: 40px;
+        }
+
+        .sidebar-nav {
+            padding: 9px 0;
+        }
+
+
+        /* Enable use of floated navbar text */
+        .navbar-text.pull-right {
+            float: none;
+            padding-left: 5px;
+            padding-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <form action="/UserAdd" class="definewidth m20">
+        <table class="table table-bordered table-hover definewidth m10">
+            <tr>
+                <td class="tableleft">版本信息</td>
+                <td><input type="text" id="versionIntroduce" name="versionIntroduce"/></td>
+            </tr>
+            <tr>
+                <td class="tableleft"></td>
+                <td>
+                    <button  class="btn btn-primary" type="button" onclick="AddVersionIntroduce()">保存</button> &nbsp;&nbsp;<button type="button" class="btn btn-success" name="backid" id="backid">返回列表</button>
+                </td>
+            </tr>
+        </table>
+    </form>
+</body>
+</html>
+<script>
+    var right=false;
+    $(function () {
+        $('#backid').click(function () {
+            window.location.href = "../VersionManage";
+        });
+    });
+
+    function AddVersionIntroduce()
+    {
+        var versionIntroduce = $("input[name='versionIntroduce']").val();
+        $.ajax({
+            type: "post",
+            url: "UserAdd/" + name + "/" + fpwd + "/" + status,
+            dataType: "json",
+            success: function (data) {
+                if (data.success == true) {
+                    window.location = "../UserManage";
+                }
+                else {
+                    right = false;
+                }
+            }
+        });
+    }
+
+</script>

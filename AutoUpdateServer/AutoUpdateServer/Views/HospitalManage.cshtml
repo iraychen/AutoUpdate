@@ -55,7 +55,7 @@
                     <td>
                         @if (ViewBag.permission.ToString() == "Admin")
                         {
-                            <a href="../VersionController/@item.ID" style="margin:auto">版本控制</a>
+                            <a href="../VersionManage/@item.ID" style="margin:auto">版本控制</a>
                             <a href="../HospitalEdit/@item.ID" style="margin:auto">编辑</a>
                             <a style="cursor:pointer" onclick="del(this)" title="@item.ID">删除</a>
                         }

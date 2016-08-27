@@ -28,5 +28,6 @@ namespace AutoUpdateServer.Modules
             nancyConventions.StaticContentsConventions.Add(StaticContentConventionBuilder.AddDirectory("front"));
             nancyConventions.StaticContentsConventions.Add(StaticContentConventionBuilder.AddDirectory("Css"));
         }
+
     }
 }
