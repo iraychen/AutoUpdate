@@ -4,7 +4,9 @@ using AutoUpdateServer.Enum;
 using AutoUpdateServer.Model;
 using AutoUpdateServer.Reponse.Model;
 using Nancy;
+using Newtonsoft.Json;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -16,67 +18,59 @@ namespace AutoUpdateServer.ViewModel
 {
     public class HospitalFileUpLoadViewModel
     {
-        private static string uploadRootDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ConstFile.CLIENTFILESDIRETORYNAME);
-        private static IEnumerable<HttpFile> httpFiles;
-        private static List<string> CreateFileOrDiretoryPathList = new List<string>();
+        private static List<string> CreateFileOrDiretoryList = new List<string>();
         private static string currentFileName = string.Empty;
         private static string currentUser = string.Empty;
         public bool IsRuning = false;
         private HospitalFileUpLoadViewModel() { }
 
         public static readonly HospitalFileUpLoadViewModel instance = new HospitalFileUpLoadViewModel();
-        public ResponseModel BatchFile(IEnumerable<HttpFile> files,string user)
+        public ResponseModel BatchFile(IEnumerable<HttpFile> files, string user)
         {
-            ResponseModel responseModel = new ResponseModel(); ;
+            var responseModel = new ResponseModel();
+            var models = SQLiteHelper.VersionQuery("BaseModel");
+            if (models == null || models.Count == 0)
+            {
+                responseModel.Success = false;
+                responseModel.Msg = "服务端没有配置过模板文件，请联系管理员";
+                this.IsRuning = false;
+                return responseModel;
+            }
             try
             {
                 this.IsRuning = true;
-                httpFiles = files;
                 currentUser = user;
-                if (httpFiles.Count() > 0)
+                if (files.Count() > 0)
                 {
-                    //1.快速检查文件中是否有命名不正确
-                    var right = CheckFileName(responseModel);
-                    if (right)
+                    foreach (var file in files)
                     {
-                        foreach (var file in httpFiles)
+                        currentFileName = file.Name;
+                        //1.检查文件中是否有命名不正确
+                        int hospitalID;
+                        HospitalModel hospitalModel;
+                        if (!CheckFileName(responseModel, file, out hospitalID, out hospitalModel))
                         {
-                            currentFileName = file.Name;
-                            //2.拿到更新包名称里面包含的HospitalID
-                            var hospitalID = int.Parse(file.Name.Substring(0, currentFileName.LastIndexOf(".")));
-                            //3.生成上传的包的地址
-                            var fileFullName = Path.Combine(uploadRootDirectory, file.Name);
-                            //4.把文件存放到根目录下
-                            SaveFile(file, fileFullName);
-                            //5.解压更新包到根目录。代码注意点：一定要放到外面，等fileStream释放，不然进程被占用
-                            if (ZipHelper.UnZipPath(fileFullName, uploadRootDirectory))
-                            {
-                                //6.获取当前解压出来文件的文件目录地址
-                                var upLoadFileDirectoryPath = Path.Combine(uploadRootDirectory, Path.GetFileNameWithoutExtension(fileFullName));
-                                CreateFileOrDiretoryPathList.Add(upLoadFileDirectoryPath);
-                                //7.检查CompareInfoConfig{}配置文件信息.没有问题则拿到compareFileNames
-                                List<string> compareFileNames;
-                                if (!CheckCompareInfoConfig(responseModel, hospitalID, out compareFileNames))
-                                {
-                                    break;
-                                }
-                                //8.根据数据库信息判断是否第一次上传
-                                var versionData = SQLiteHelper.VersionQuery(1, hospitalID);
-                                if (versionData != null && versionData.Count ==0)
-                                {
-                                    //第一次上传
-                                    FirstCompareAction(upLoadFileDirectoryPath, compareFileNames, hospitalID);
-                                }
-                                else
-                                {
-                                    CompareAction(upLoadFileDirectoryPath, compareFileNames, hospitalID);
-                                }
-                                continue;
-                            }
-                            responseModel.Success = false;
-                            responseModel.Msg = file.Name + "处理失败";
                             break;
                         }
+                        //2.获取老版本文件目录和解压后的临时目录,压缩包地址存放地址
+                        var oldFilesDirectoryPath = Path.Combine(ConstFile.WorkPath, hospitalID.ToString());
+                        var tempDirectoryPath = Path.Combine(ConstFile.TempPath, DateTime.Now.ToString("yyyyMMddhhmmssffff"));
+                        var zipPath = Path.Combine(tempDirectoryPath, file.Name);
+                        //3.把文件存放到根目录下
+                        SaveFile(file, zipPath);
+                        //4.解压更新包到根目录。
+                        if (ZipHelper.UnZipPath(zipPath, tempDirectoryPath))
+                        {
+                            CreateFileOrDiretoryList.Add(tempDirectoryPath);
+                            //5.获取当前解压出来文件的文件目录地址
+                            var newestFileDirectoryPath = Path.Combine(tempDirectoryPath, Path.GetFileNameWithoutExtension(zipPath));
+                            //6.对比
+                            CompareAction(oldFilesDirectoryPath, newestFileDirectoryPath, hospitalID, hospitalModel, zipPath);
+                            continue;
+                        }
+                        responseModel.Success = false;
+                        responseModel.Msg = file.Name + "处理失败";
+                        break;
                     }
                 }
             }
@@ -86,131 +80,167 @@ namespace AutoUpdateServer.ViewModel
                 responseModel.Msg = string.Format("{0}上传失败：服务端异常，{1}", currentFileName, ex.Message);
             }
             //删除临时文件和目录
-            DeleteFileOrDirectory();
+            DeleteTempFileOrDirectory();
             this.IsRuning = false;
             return responseModel;
         }
-        private static bool CheckCompareInfoConfig(ResponseModel responseModel, int hospitalID, out List<string> compareFileNames)
+        private static void CompareAction(string oldFilesDirectoryPath, string newestFileDirectoryPath, int hospitalID, HospitalModel hospitalModel, string zipPath)
         {
-            var compareInfoConfigPath = Path.Combine(uploadRootDirectory, ConstFile.COMPAREINFOCONFIGDIRETORYNAME, string.Format(ConstFile.COMPAREINFOCONFIGFILENAME, hospitalID));
-            compareFileNames = new List<string>();
-            var model = FileUtil.XMLLoadData<CompareInfoConfig>(compareInfoConfigPath);
-            if (model != null && model.Names.Count > 0)
+            //1.获取当前医院最新版本设置版本号
+            //2.对比,管理文件
+            //3.修改本地配置
+            var lastVersionModel = new VersionModel();
+            var number = ConstFile.BASEVERSION;
+            var newestAlldllVersionDictionary = new Dictionary<string, string>();
+            var newestFileDirectoryInfo = new DirectoryInfo(newestFileDirectoryPath);
+            GetFileNameDictionary(newestFileDirectoryInfo, newestAlldllVersionDictionary, ConstFile.BASEVERSION, hospitalID.ToString());
+            var newesterVsionModel = new VersionModel
             {
-                compareFileNames = model.Names;
-                return true;
-            }
-            responseModel.Success = false;
-            responseModel.Msg = string.Format("未配置：{0}", string.Format(ConstFile.COMPAREINFOCONFIGFILENAME, hospitalID));
-            return false;
-        }
-        private static void FirstCompareAction(string upLoadFileDirectoryPath, List<string> compareFileNames, int hospitalID)
-        {
-            var versionModel = new VersionModel();
-            versionModel.Number = ConstFile.BASEVERSION;
-            versionModel.HospitalID = hospitalID;
-            versionModel.UpLoadTime = DateTime.Now;
-            versionModel.ID = DateTime.Now.ToString("yyyyMMddhhmmssffff");
-            versionModel.User = currentUser;
-            var dllInfos = new List<DLLModel>();
-            compareFileNames.ForEach(p =>
-            {
-                var uploadFilePath = Path.Combine(upLoadFileDirectoryPath, p);
-                if (File.Exists(uploadFilePath))
-                {
-                    var uploadFileInfo = new FileInfo(uploadFilePath);
-                    var newFileInfo = FileCopy(p, uploadFileInfo, ConstFile.BASEVERSION);
-                    dllInfos.Add(new DLLModel
-                    {
-                        Name = newFileInfo.Name,
-                        Size = newFileInfo.Length,
-                        UpdateStatus = UpdateStatus.ADD,
-                        VersionID = versionModel.ID
-                    });
-                }
-            });
-            SQLiteHelper.Insert<VersionModel>(versionModel);
-            SQLiteHelper.Insert<DLLModel>(dllInfos);
+                ID = DateTime.Now.ToString("yyyyMMddhhmmssffff"),
+                HospitalID = hospitalID,
+                UpLoadTime = DateTime.Now,
+                User = currentUser
+            };
+            var versionModels = SQLiteHelper.VersionQuery(1000, hospitalID);
+            //对比逻辑：
+            //1.第一次上传的时候或者当前没有出新文件的时候。和模板文件匹配.
+            //2.第二次开始：
+            //  A【修改】.上传文件和本地文件都存在，对比不同，则把最新的文件复制到work目录和仓库目录，并且设置上传文件version为最新version（存入数据库时）
+            //  B【不变】.上传文件和本地文件都存在，对比相同，不复制文件，设置上传文件version为老版本文件的version（存入数据库时）
+            //  C【新增】.上传文件存在，本地文件不存在，则把最新的文件复制到work目录和仓库目录，并且设置上传文件version为最新version（存入数据库时）
+            //  D【删除】.上传文件不存在，本地文件存在。暂时不操作。
+            var oldAlldllVersionDictionary = new Dictionary<string, string>();
+            var workPath = Path.Combine(ConstFile.WorkPath, hospitalID.ToString());
 
-        }
-        private static void CompareAction(string upLoadFileDirectoryPath, List<string> compareFileNames, int hospitalID)
-        {
-            //1.找到对应hospitalid的最新版本2.对比3.修改本地配置
-            var dataBase = SQLiteHelper.VersionQuery(1000, hospitalID);
-            var newestVersionModel = dataBase.FirstOrDefault(p => p.ID == dataBase.Max(t => t.ID));
-            var newestDLLModel = SQLiteHelper.DLLQuery(1000, newestVersionModel.ID);
-            var number = CreateVersion(newestVersionModel.Number);
-            var versionModel = new VersionModel();
-            versionModel.ID = DateTime.Now.ToString("yyyyMMddhhmmssffff");
-            versionModel.Number = number;
-            versionModel.HospitalID = hospitalID;
-            versionModel.UpLoadTime = DateTime.Now;
-            versionModel.User = currentUser;
-            var dllInfos = new List<DLLModel>();
-            compareFileNames.ForEach(p =>
+            if (versionModels.Count != 0)
             {
-                var uploadFilePath = Path.Combine(upLoadFileDirectoryPath, p);
-                var localFilePath = Path.Combine(uploadRootDirectory, GetDLLName(newestDLLModel, p));
-                var uploadFileInfo = new FileInfo(uploadFilePath);
-                var localFileInfo = new FileInfo(localFilePath);
-                //对比规则：
-                //1.根据配置去找上传文件中对应的文件，如果不存在。则表示当前DLL删除（即用户修改了compareConfig 删除了一项）
-                //2.如果对应的文件存在，但是本地不存在。则表示当前DLL是新增（即用户修改了compareConfig 新增了一项）
-                //3.如果对应的文件存在，本地也存在，对比hash值。如果不同，则表示当前DLL是修改；反之，则为保持KEEP
-                if (File.Exists(uploadFilePath))
+                lastVersionModel = versionModels.FirstOrDefault(p => p.ID == versionModels.Max(t => t.ID));
+                number = AddVersion(lastVersionModel.Number);
+            }
+
+            if (!Directory.Exists(workPath) || Directory.GetDirectories(workPath).Length + Directory.GetFiles(workPath).Length == 0)
+            {
+
+                if (Directory.Exists(oldFilesDirectoryPath))
                 {
-                    if (!File.Exists(localFilePath))
+                    Directory.Delete(oldFilesDirectoryPath, true);
+                }
+                var baseModel = SQLiteHelper.VersionQuery("BaseModel")[0];
+                oldAlldllVersionDictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(baseModel.AllDLLVersion);
+                oldFilesDirectoryPath = ConstFile.BaseFilePath;
+            }
+            else
+            {
+                oldAlldllVersionDictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(lastVersionModel.AllDLLVersion);
+            }
+
+            var tempdllVersionDictionary = new Dictionary<string, string>();
+            foreach (var key in newestAlldllVersionDictionary.Keys)
+            {
+                var newestFilePath = Path.Combine(newestFileDirectoryPath, key);
+                var newestFileInfo = new FileInfo(newestFilePath);
+                var localFilePath = Path.Combine(oldFilesDirectoryPath, key);
+                if (File.Exists(localFilePath))
+                {
+                    var localFileInfo = new FileInfo(localFilePath);
+                    if (!isTheSame(newestFileInfo, localFileInfo))
                     {
-                        var newFileInfo = FileCopy(p, uploadFileInfo, number);
-                        dllInfos.Add(new DLLModel
-                        {
-                            Name = newFileInfo.Name,
-                            Size = newFileInfo.Length,
-                            UpdateStatus = UpdateStatus.ADD,
-                            VersionID = versionModel.ID
-                        });
+                        FileCopy(newestFileInfo, hospitalID.ToString(), number, workPath, key);
+                        tempdllVersionDictionary.Add(key, number);
                     }
                     else
                     {
-                        if (!isTheSame(new FileInfo(uploadFilePath), new FileInfo(localFilePath)))
-                        {
-                            var newFileInfo = FileCopy(p, uploadFileInfo, number);
-                            dllInfos.Add(new DLLModel
-                            {
-                                Name = newFileInfo.Name,
-                                Size = newFileInfo.Length,
-                                UpdateStatus = UpdateStatus.UPDATE,
-                                VersionID = versionModel.ID
-                            });
-                        }
-                        else
-                        {
-                            dllInfos.Add(new DLLModel
-                            {
-                                Name = localFileInfo.Name,
-                                Size = localFileInfo.Length,
-                                UpdateStatus = UpdateStatus.KEEP,
-                                VersionID = versionModel.ID
-                            });
-                        }
+                        tempdllVersionDictionary.Add(key, oldAlldllVersionDictionary[key]);
                     }
+                    //oldAlldllVersionDictionary.Remove(key);
                 }
                 else
                 {
-                    dllInfos.Add(new DLLModel
-                    {
-                        Name = localFileInfo.Name,
-                        Size = localFileInfo.Length,
-                        UpdateStatus = UpdateStatus.DELETE,
-                        VersionID = versionModel.ID
-                    });
+                    FileCopy(newestFileInfo, hospitalID.ToString(), number, workPath, key);
+                    tempdllVersionDictionary.Add(key, number);
                 }
-            });
-            SQLiteHelper.Insert<VersionModel>(versionModel);
-            SQLiteHelper.Insert<DLLModel>(dllInfos);
+            }
+            foreach (var key in tempdllVersionDictionary.Keys)
+            {
+                if (oldAlldllVersionDictionary.Keys.Contains(key))
+                {
+                    oldAlldllVersionDictionary[key] = tempdllVersionDictionary[key];
+                    continue;
+                }
+                oldAlldllVersionDictionary.Add(key, tempdllVersionDictionary[key]);
+            }
+            //剩下删除的文件
+            //foreach (var key in oldAlldllVersionDictionary)
+            //{
+            //    oldAlldllVersionDictionary
+            //}
+
+            hospitalModel.NewestVersion = number;
+            newesterVsionModel.Number = number;
+            newesterVsionModel.AllDLLVersion = JsonConvert.SerializeObject(oldAlldllVersionDictionary);
+            SQLiteHelper.Insert<VersionModel>(newesterVsionModel);
+            SQLiteHelper.Update<HospitalModel>(hospitalModel);
+        }
+        internal ResponseModel BatchBaseModel(IEnumerable<HttpFile> files, string userName)
+        {
+            var responseModel = new ResponseModel();
+            foreach (var file in files)
+            {
+                try
+                {
+                    var tempFileName = DateTime.Now.ToString("yyyyMMddhhmmssffff");
+                    var zipPath = Path.Combine(ConstFile.TempPath, tempFileName);
+                    SaveFile(file, zipPath);
+                    if (Directory.Exists(ConstFile.BaseFilePath))
+                    {
+                        Directory.Delete(ConstFile.BaseFilePath, true);
+                    }
+                    ZipHelper.UnZipPath(zipPath, ConstFile.TempPath);
+                    CreateFileOrDiretoryList.Add(zipPath);
+                    var tempDirectoryPath = Path.Combine(ConstFile.TempPath, Path.GetFileNameWithoutExtension(file.Name));
+                    CreateFileOrDiretoryList.Add(tempDirectoryPath);
+                    var tempDirectoryInfo = new DirectoryInfo(tempDirectoryPath);
+                    tempDirectoryInfo.MoveTo(ConstFile.BaseFilePath);
+                    var newestAlldllVersionDictionary = new Dictionary<string, string>();
+                    var newestFileDirectoryInfo = new DirectoryInfo(ConstFile.BaseFilePath);
+                    GetFileNameDictionary(newestFileDirectoryInfo, newestAlldllVersionDictionary, ConstFile.BASEVERSION, "BaseModel");
+                    var baseVersion = new VersionModel
+                    {
+                        ID = "BaseModel",
+                        AllDLLVersion = JsonConvert.SerializeObject(newestAlldllVersionDictionary),
+                        User = userName,
+                        UpLoadTime = DateTime.Now,
+                        HospitalID = -1,
+                        Number = ConstFile.BASEVERSION,
+                    };
+                    var models = SQLiteHelper.VersionQuery(baseVersion.ID);
+                    if ((models == null || models.Count == 0))
+                    {
+                        SQLiteHelper.Insert<VersionModel>(baseVersion);
+                    }
+                    else
+                    {
+                        SQLiteHelper.Update<VersionModel>(baseVersion);
+                    }
+                    responseModel.Success = true;
+                }
+                catch (Exception ex)
+                {
+                    CreateFileOrDiretoryList.Add(ConstFile.BaseFilePath);
+                    responseModel.Success = false;
+                    responseModel.Msg = string.Format("上传失败：原因{0}", ex.Message);
+                    break;
+                }
+
+            }
+
+            DeleteTempFileOrDirectory();
+            return responseModel;
 
         }
-        private static string CreateVersion(string newestVersion)
+
+
+        private static string AddVersion(string newestVersion)
         {
             //1.version 命名规则(2.0.0)2不变，递增
             var arr = newestVersion.Split('.');
@@ -230,41 +260,35 @@ namespace AutoUpdateServer.ViewModel
                 return hash1.SequenceEqual(hash2);
             }
         }
-
-        private static FileInfo FileCopy(string compareFileName, FileInfo uploadFileInfo, string version)
+        private static void FileCopy(FileInfo newestFileInfo, string hospitalID, string version, string workPath, string path)
         {
-            var name = version + "-" + compareFileName;
-            var index = compareFileName.LastIndexOf('.');
-            if (index > 0)
-            {
-                name = compareFileName.Substring(0, index) + "-" + version + compareFileName.Substring(index);
-            }
-            var newFileInfo = new FileInfo(Path.Combine(uploadRootDirectory, name));
-            var dir = newFileInfo.Directory;
+            //复制成新的更新包文件(生成相对的文件目录，因为可能出现不同文件夹同名文件)，复制到WORK目录
+            var newestPackageFileName = string.Format("{0}-{1}{2}", Path.GetFileNameWithoutExtension(newestFileInfo.Name), version, Path.GetExtension(newestFileInfo.Name));
+            var newestPackageFileInfo = new FileInfo(Path.Combine(ConstFile.WareHousePath, hospitalID, Path.GetDirectoryName(path), newestPackageFileName));
+            var dir = newestPackageFileInfo.Directory;
             if (!dir.Exists)
                 dir.Create();
-            if (File.Exists(newFileInfo.FullName))
-            {
-                File.Delete(newFileInfo.FullName);
-            }
-            uploadFileInfo.CopyTo(newFileInfo.FullName);
-            return newFileInfo;
+            newestFileInfo.CopyTo(newestPackageFileInfo.FullName, true);
+
+            var workFilePath = Path.Combine(workPath, Path.GetDirectoryName(path));
+            newestFileInfo.CopyTo(workPath, true);
         }
-        private static void SaveFile(HttpFile file, string fileFullName)
+        private static void SaveFile(HttpFile file, string zipPath)
         {
-            if (!Directory.Exists(uploadRootDirectory))
+            var fileInfo = new FileInfo(zipPath);
+            if (!Directory.Exists(fileInfo.DirectoryName))
             {
-                Directory.CreateDirectory(uploadRootDirectory);
+                Directory.CreateDirectory(fileInfo.DirectoryName);
             }
-            using (FileStream fileStream = new FileStream(fileFullName, FileMode.Create))
+            using (FileStream fileStream = new FileStream(zipPath, FileMode.Create))
             {
                 file.Value.CopyTo(fileStream);
-                CreateFileOrDiretoryPathList.Add(fileFullName);
+                CreateFileOrDiretoryList.Add(zipPath);
             }
         }
-        private static void DeleteFileOrDirectory()
+        private static void DeleteTempFileOrDirectory()
         {
-            foreach (var path in CreateFileOrDiretoryPathList)
+            foreach (var path in CreateFileOrDiretoryList)
             {
                 if (File.Exists(path))
                 {
@@ -277,35 +301,44 @@ namespace AutoUpdateServer.ViewModel
                 }
             }
         }
-        private static bool CheckFileName(ResponseModel responseModel)
+        private static bool CheckFileName(ResponseModel responseModel, HttpFile file, out int hospitalID, out HospitalModel hospitalModel)
         {
+            hospitalID = 0;
+            hospitalModel = new HospitalModel();
             string pattern = @"^\d+$";
-            foreach (var file in httpFiles)
+            var fileName = Path.GetFileNameWithoutExtension(file.Name);
+            if (!Regex.IsMatch(fileName, pattern))
             {
-                var index = file.Name.LastIndexOf(".");
-                if (!Regex.IsMatch(file.Name.Substring(0, index), pattern))
+                responseModel.Success = false;
+                responseModel.Msg = "命名不正确,请看规则";
+                return false;
+            }
+            else
+            {
+                var hospitalModels = SQLiteHelper.HospitalQuery(int.Parse(fileName));
+                if (hospitalModels.Count == 0)
                 {
                     responseModel.Success = false;
-                    responseModel.Msg = "命名不正确,请看规则";
+                    responseModel.Msg = string.Format("请先在网站创建医院ID为{0}的记录，看规则", fileName);
                     return false;
                 }
+                hospitalModel = hospitalModels[0];
+                hospitalID = int.Parse(fileName);
             }
             return true;
-
         }
-        private static string GetDLLName(List<DLLModel> newestDLLModel, string name)
+        private static void GetFileNameDictionary(DirectoryInfo info, Dictionary<string, string> fileNameDictionary, string version, string hospitalID)
         {
-            string dLLName = string.Empty;
-            foreach (var p in newestDLLModel)
+            var tag = string.Format(@"\{0}\", hospitalID);
+            foreach (var item in info.GetFiles())
             {
-                if (p.Name.Substring(0, p.Name.LastIndexOf(".")).Contains(name.Substring(0, name.LastIndexOf("."))) &&
-                p.Name.Substring(p.Name.LastIndexOf(".")) == name.Substring(name.LastIndexOf(".")))
-                {
-                    dLLName = p.Name;
-                    break;
-                }
+                //因为不同的目录可能含有相同名称的文件。所以取路径作为KEY
+                fileNameDictionary.Add(item.FullName.Substring(item.FullName.LastIndexOf(tag) + tag.Length), version);
             }
-            return dLLName;
+            foreach (var item in info.GetDirectories())
+            {
+                GetFileNameDictionary(item, fileNameDictionary, version, hospitalID);
+            }
         }
     }
 }

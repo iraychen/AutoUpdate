@@ -14,5 +14,7 @@ namespace AutoUpdateServer.Model
         [NotNull]
         public string Name { get; set; }
 
+        public string NewestVersion { get; set; }
+
     }
 }

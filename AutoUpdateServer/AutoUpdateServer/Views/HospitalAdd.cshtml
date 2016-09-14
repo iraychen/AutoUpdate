@@ -54,7 +54,7 @@
 </body>
 </html>
 <script>
-    var right=false;
+    var right = false;
     $(function () {
         $('#backid').click(function () {
             window.location.href = "../HospitalManage";
@@ -63,15 +63,12 @@
         $('#checkNumberSpan').hide()
     });
 
-    function checkName()
-    {
+    function checkName() {
         var HospitalID = $('#HospitalID').val();
-        if (HospitalID == "")
-        {
+        if (HospitalID == "") {
             return;
         }
-        if (isNaN(HospitalID))
-        {
+        if (isNaN(HospitalID)) {
             $('#checkNumberSpan').show()
             $('#checkIDSpan').hide();
             right = false
@@ -83,24 +80,22 @@
             url: "checkHospitalID/" + HospitalID,
             dataType: "json",
             success: function (data) {
-                if (data.success == true) {
-                    right = true;
-                    $('#checkIDSpan').hide();
+                if (data == true) {
+                    right = false;
+                    $('#checkIDSpan').show();
                 }
                 else {
-                    $('#checkIDSpan').show();
-                    right = false
+                    $('#checkIDSpan').hide();
+                    right = true
                 }
             }
         });
     }
 
-    function AddHospital()
-    {
+    function AddHospital() {
         var id = $("input[name='HospitalID']").val();
         var name = $("input[name='HospitalName']").val();
-        if (name == "" || id == "")
-        {
+        if (name == "" || id == "") {
             right = false
             alert("请将信息填写完整");
             return;
@@ -116,8 +111,8 @@
             url: "HospitalAdd/" + id + "/" + name,
             dataType: "json",
             success: function (data) {
-                if (data.success == true) {
-                    window.location = "../HospitalManage"; 
+                if (data == true) {
+                    window.location = "../HospitalManage";
                 }
                 else {
                     alert("添加失败");

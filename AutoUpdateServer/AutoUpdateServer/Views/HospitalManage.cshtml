@@ -25,6 +25,7 @@
         .sidebar-nav {
             padding: 9px 0;
         }
+
         .navbar-text.pull-right {
             float: none;
             padding-left: 5px;
@@ -43,6 +44,7 @@
             <tr>
                 <th>医院编号</th>
                 <th>医院名称</th>
+                <th>最新版本</th>
                 <th>管理操作</th>
             </tr>
         </thead>
@@ -52,6 +54,14 @@
                 <tr>
                     <td>@item.ID</td>
                     <td>@item.Name</td>
+                    @if (string.IsNullOrEmpty(item.NewestVersion))
+                    {
+                        <td>暂无版本</td>
+                    }
+                    else
+                    {
+                        <td>@item.NewestVersion</td>
+                    }
                     <td>
                         @if (ViewBag.permission.ToString() == "Admin")
                         {
@@ -70,8 +80,8 @@
         }
     </table>
     @*<div class="inline pull-right page">
-        10122 条记录 1/507 页  <a href='#'>下一页</a>     <span class='current'>1</span><a href='#'>2</a><a href='/chinapost/index.php?m=Label&a=index&p=3'>3</a><a href='#'>4</a><a href='#'>5</a>  <a href='#'>下5页</a> <a href='#'>最后一页</a>
-    </div*@
+            10122 条记录 1/507 页  <a href='#'>下一页</a>     <span class='current'>1</span><a href='#'>2</a><a href='/chinapost/index.php?m=Label&a=index&p=3'>3</a><a href='#'>4</a><a href='#'>5</a>  <a href='#'>下5页</a> <a href='#'>最后一页</a>
+        </div*@
 </body>
 </html>
 <script>

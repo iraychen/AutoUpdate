@@ -12,6 +12,10 @@ namespace AutoUpdateServer.ViewModel
     {
         public static UserModel Verify(List<UserModel> models,string name,string passWord)
         {
+            if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(passWord))
+            {
+                return null;
+            }
             var model = models.FirstOrDefault(t => t.Name == name);
             if (model != null)
             {

@@ -54,54 +54,43 @@
     <div class="container">
         <div class="form-signin">
             <h2 class="form-signin-heading">登录系统</h2>
-            <form action="/Login" method="post">
+            <form action="/Login" method="post" id="formid">
+                @Html.AntiForgeryToken()
                 <input type="text" name="username" class="control-text" placeholder="名称">
                 <div style="height:40px"> </div>
                 <input type="password" name="password" class="control-text" placeholder="密码">
-                <p><button class="btn btn-large btn-primary" type="submit">登录</button></p>
-                <p><span id="errorMsg" style="color:red" >密码或者账号错误</span></p>
-                <p><button id="errorTag" value="@ViewBag.ErrorTag"></button></p>
+                <p><input class="btn btn-large btn-primary" value="登录" type="submit"  onclick="Login()"/></p>
+                @*<p><span id="errorMsg" style="color:red" >密码或者账号错误</span></p>
+                <p><button id="errorTag" value="@ViewBag.ErrorTag"></button></p>*@
             </form>
         </div>
     </div>
 </body>
 </html>
 <script type="text/javascript">
-    $(function () {
-        var value = $('#errorTag').val();
-        $('#errorTag').hide();
-        if (value == null || value == "") {
-            $('#errorMsg').hide();
-        }
-        else
-        {
-            $('#errorMsg').show();
-        }
-    });
+    //$(function () {
+    //    var value = $('#errorTag').val();
+    //    $('#errorTag').hide();
+    //    if (value == null || value == "") {
+    //        $('#errorMsg').hide();
+    //    }
+    //    else
+    //    {
+    //        $('#errorMsg').show();
+    //    }
+    //});
 
     //function Login() {
     //    var userName = $("input[name='username']").val();
     //    var passWord = $("input[name='password']").val();
     //    if (userName == "" || passWord == "") {
-    //        alert("请把信息填完整");
-    //        return;
+    //        alert("请把信息写完整");
     //    }
-    //    else {
-    //        $.ajax({
-    //            type: "post",
-    //            url: "Login/" + userName + "/" + passWord,
-    //            dataType: "json",
-    //            success: function (data) {
-    //                if (data.success == true) {
-    //                    //window.location = "index"; onclick="Login()"
-    //                }
-    //                else
-    //                {
-    //                    alert("账号或密码错误");
-    //                }
-    //            }
-    //        });
+    //    else
+    //    {
+
     //    }
+     
     //}
 </script>
 

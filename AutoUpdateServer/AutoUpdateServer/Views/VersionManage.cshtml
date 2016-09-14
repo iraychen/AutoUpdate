@@ -42,8 +42,9 @@
         <thead>
             <tr>
                 <th>版本号</th>
+                <th>上传者</th>
                 <th>上传时间</th>
-                <th>介绍</th>
+                <th>描述信息</th>
                 <th>管理操作</th>
             </tr>
         </thead>
@@ -52,14 +53,28 @@
             {
                 <tr>
                     <td>@item.Number</td>
+                    <td>@item.User</td>
                     <td>@item.UpLoadTime</td>
-                    <td>@item.Description</td>
+                    @if (string.IsNullOrEmpty(item.Description))
+                    {
+                        <td style="color:red">请尽快补全描述信息!!!!!!!</td>
+                    }
+                    else
+                    {
+                        <td>@item.Description</td>
+                    }
                     <td>
-                        <a href="../VersionController/@item.ID" style="margin:auto">设定为最新版本</a>
-                        <a href="../VersionEdit/@item.ID/@item.HospitalID" style="margin:auto">编辑</a>
-                        <a style="cursor:pointer" onclick="del(this)" title="@item.ID">删除</a>
+                        @if (ViewBag.NewestVersion != item.Number)
+                        {
+                            <a style="cursor:pointer;color:darkgreen" onclick="Set(this)" title="@item.Number" id="@item.HospitalID">设定为最新版本</a>
+                        }
+                        else
+                        {
+                            <span style="color:mediumpurple">当前为最新版本</span>
+                        }
+                        <a href="../VersionEdit/@item.ID" style="margin:auto">编辑</a>
+                        <a style="cursor:pointer" onclick="Delete(this)" title="@item.ID" id="@item.HospitalID">删除</a>
                     </td>
-
                 </tr>
             }
         }
@@ -76,20 +91,35 @@
         });
     });
 
-    function del(val) {
-        if (confirm("确定要删除吗？")) {
+    function Set(val) {
+        if (confirm("确定要设置该版本为最新版本吗？")) {
             $.ajax({
                 type: "POST",
-                url: "HospitalDelete/" + val.title,
-                dataType: "json",
+                url: "../VersionSet/" + val.title + "/" + val.id,
                 success: function (data) {
-                    window.location.href = "HospitalManage";
-                },
-                error: function () {
-                    alert("error");
+                    if (!data) {
+                        alert("设置失败:" + data);
+                    }
+                    location.reload();
                 }
             });
+        }
+    }
 
+
+    function Delete(val) {
+        if (confirm("将会删除服务端该版本的所有文件，确定要删除吗？")) {
+            $.ajax({
+                type: "POST",
+                url: "../VersionDelete/" + val.title + "/" + val.id,
+                success: function (data) {
+                    if (data != null && data != "")
+                    {
+                        alert("删除失败:" + data);
+                    }
+                    location.reload();
+                }
+            });
         }
     }
 </script>

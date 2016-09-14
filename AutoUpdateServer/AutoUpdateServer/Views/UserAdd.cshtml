@@ -59,7 +59,7 @@
             <tr>
                 <td class="tableleft"></td>
                 <td>
-                    <button  class="btn btn-primary" type="button" onclick="AddUser()">保存</button> &nbsp;&nbsp;<button type="button" class="btn btn-success" name="backid" id="backid">返回列表</button>
+                    <button class="btn btn-primary" type="button" onclick="AddUser()">保存</button> &nbsp;&nbsp;<button type="button" class="btn btn-success" name="backid" id="backid">返回列表</button>
                 </td>
             </tr>
         </table>
@@ -67,7 +67,7 @@
 </body>
 </html>
 <script>
-    var right=false;
+    var right = false;
     $(function () {
         $('#backid').click(function () {
             window.location.href = "../UserManage";
@@ -76,11 +76,9 @@
         $('#checkPwdSpan').hide();
     });
 
-    function checkName()
-    {
+    function checkName() {
         var name = $('#name').val();
-        if (name == "")
-        {
+        if (name == "") {
             return;
         }
         $.ajax({
@@ -88,13 +86,13 @@
             url: "checkUserName/" + name,
             dataType: "json",
             success: function (data) {
-                if (data.success == true) {
-                    right = true;
-                    $('#checkNameSpan').hide();
+                if (data == true) {
+                    right = false;
+                    $('#checkNameSpan').show();
                 }
                 else {
-                    $('#checkNameSpan').show();
-                    right = false
+                    $('#checkNameSpan').hide();
+                    right = true
                 }
             }
         });
@@ -105,21 +103,18 @@
         var spwd = $("input[name='secondPassword']").val();
         if (fpwd != spwd) {
             $('#checkPwdSpan').show();
-             right = false;
+            right = false;
         }
-        else
-        {
+        else {
             $('#checkPwdSpan').hide();
         }
     }
 
-    function AddUser()
-    {
+    function AddUser() {
         var name = $("input[name='name']").val();
         var fpwd = $("input[name='firstPassword']").val();
         var spwd = $("input[name='secondPassword']").val();
-        if (name == "" || fpwd == "" || spwd == "")
-        {
+        if (name == "" || fpwd == "" || spwd == "") {
             right = false
             alert("请将信息填写完整");
             return;
@@ -135,7 +130,7 @@
             url: "UserAdd/" + name + "/" + fpwd + "/" + status,
             dataType: "json",
             success: function (data) {
-                if (data.success == true) {
+                if (data == true) {
                     window.location = "../UserManage";
                 }
                 else {

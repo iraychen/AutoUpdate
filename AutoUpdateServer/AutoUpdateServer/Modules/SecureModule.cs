@@ -5,6 +5,7 @@ using Nancy;
 using Nancy.Security;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Web;
 
@@ -12,34 +13,10 @@ namespace AutoUpdateServer.Modules
 {
     public class SecureModule : NancyModule
     {
-        private static List<UserModel> users;
-        private List<UserModel> Users
-        {
-            get
-            {
-                return users ?? UserManageViewModel.GetData();
-            }
-            set
-            {
-                users = value;
-            }
-        }
-
-        private static List<HospitalModel> hospitals;
-        private List<HospitalModel> Hospitals
-        {
-            get
-            {
-                return hospitals ?? HospitalManageViewModel.GetData();
-            }
-            set
-            {
-                hospitals = value;
-            }
-        }
         public SecureModule()
         {
             this.RequiresAuthentication();
+
             #region IndexRemote
             Get["index"] = _ =>
             {
@@ -52,27 +29,18 @@ namespace AutoUpdateServer.Modules
             Get["UserManage"] = _ =>
             {
                 ViewBag["permission"] = ((UserIdentity)this.Context.CurrentUser).Permission;
-                return View["UserManage", this.Users];
+                return View["UserManage", UserManageViewModel.GetData()];
             };
             Post["QueryUser"] = p =>
             {
+                ViewBag["permission"] = ((UserIdentity)this.Context.CurrentUser).Permission;
                 string name = Request.Form["name"];
-                this.Users = UserManageViewModel.GetData(name);
-                return View["UserManage", this.Users];
+                var users = UserManageViewModel.GetData(name);
+                return View["UserManage", users];
             };
             Post["checkUserName/{Name}"] = p =>
             {
-                var reaponseModel = new ResponseModel();
-                string name = p.Name;
-                if (this.Users?.FirstOrDefault(t => t.Name == name) == null)
-                {
-                    reaponseModel.Success = true;
-                }
-                else
-                {
-                    reaponseModel.Msg = "用户名已存在";
-                }
-                return Response.AsJson(reaponseModel);
+                return (UserManageViewModel.GetData()?.FirstOrDefault(t => t.Name == p.Name) != null);
             };
             Get["UserAdd"] = _ =>
             {
@@ -80,45 +48,23 @@ namespace AutoUpdateServer.Modules
             };
             Post["UserAdd/{Name}/{PassWord}/{Status}"] = p =>
             {
-                var responseModel = new ResponseModel();
-                if (UserManageViewModel.Insert(p.Name, p.PassWord, p.Status))
-                {
-                    this.Users = UserManageViewModel.GetData();
-                    responseModel.Success = true;
-                }
-                return Response.AsJson<ResponseModel>(responseModel);
+                return UserManageViewModel.Insert(p.Name, p.PassWord, p.Status);
             };
             Get["UserEdit/{Name}"] = p =>
             {
-                var model = this.Users?.FirstOrDefault(t => t.Name == p.Name);
-                if (model != null)
-                {
-                    return View["UserEdit", model];
-                }
-                return View["UserManage", this.Users];
+                var users = UserManageViewModel.GetData();
+                var model = users?.FirstOrDefault(t => t.Name == p.Name);
+                return (model != null) ? View["UserEdit", model] : View["UserManage", users];
             };
             Post["UserEdit"] = _ =>
             {
                 UserManageViewModel.Update(Request.Form);
-                this.Users = UserManageViewModel.GetData();
-                return View["UserManage", this.Users];
+                return Response.AsRedirect("UserManage");
             };
             Post["UserDelete/{Name}"] = p =>
             {
-                var reponseMode = new ResponseModel();
-                if (!string.IsNullOrEmpty(p.Name))
-                {
-                    var model = this.Users?.FirstOrDefault(t => t.Name == p.Name);
-                    if (model != null)
-                    {
-                        if (UserManageViewModel.Delete(model))
-                        {
-                            this.Users = UserManageViewModel.GetData();
-                            reponseMode.Success = true;
-                        }
-                    }
-                }
-                return Response.AsJson(reponseMode);
+                var model = UserManageViewModel.GetData()?.FirstOrDefault(t => t.Name == p.Name);
+                return (model != null) && (UserManageViewModel.Delete(model));
             };
             #endregion
 
@@ -126,28 +72,18 @@ namespace AutoUpdateServer.Modules
             Get["HospitalManage"] = _ =>
             {
                 ViewBag["permission"] = ((UserIdentity)this.Context.CurrentUser).Permission;
-                return View["HospitalManage", this.Hospitals];
+                return View["HospitalManage", HospitalManageViewModel.GetData()];
             };
             Post["QueryHospital"] = p =>
             {
                 string name = Request.Form["name"];
-                this.Hospitals = HospitalManageViewModel.GetData(name);
                 ViewBag["permission"] = ((UserIdentity)this.Context.CurrentUser).Permission;
-                return View["HospitalManage", this.Hospitals];
+                return View["HospitalManage", HospitalManageViewModel.GetData(name)];
             };
             Post["checkHospitalID/{HospitalID}"] = p =>
             {
-                var reaponseModel = new ResponseModel();
-                int HospitalID = p.HospitalID;
-                if (this.Hospitals?.FirstOrDefault(t => t.ID == HospitalID) == null)
-                {
-                    reaponseModel.Success = true;
-                }
-                else
-                {
-                    reaponseModel.Msg = "已存在医院编号";
-                }
-                return Response.AsJson(reaponseModel);
+                var hospitals = HospitalManageViewModel.GetData();
+                return (hospitals?.FirstOrDefault(t => t.ID == p.HospitalID) != null);
             };
             Get["HospitalAdd"] = _ =>
             {
@@ -155,75 +91,62 @@ namespace AutoUpdateServer.Modules
             };
             Post["HospitalAdd/{HospitalID}/{Name}"] = p =>
             {
-                var responseModel = new ResponseModel();
-                if (HospitalManageViewModel.Insert(p.HospitalID, p.Name))
-                {
-                    this.Hospitals = HospitalManageViewModel.GetData();
-                    responseModel.Success = true;
-                }
-                return Response.AsJson<ResponseModel>(responseModel);
+                return HospitalManageViewModel.Insert(p.HospitalID, p.Name);
             };
             Get["HospitalEdit/{HospitalID}"] = p =>
             {
-                var model = this.Hospitals?.FirstOrDefault(t => t.ID == p.HospitalID);
+                ViewBag["permission"] = ((UserIdentity)this.Context.CurrentUser).Permission;
+                var model = HospitalManageViewModel.GetData()?.FirstOrDefault(t => t.ID == p.HospitalID);
                 if (model != null)
                 {
                     return View["HospitalEdit", model];
                 }
-                ViewBag["permission"] = ((UserIdentity)this.Context.CurrentUser).Permission; ;
-                return View["HospitalManage", this.Hospitals];
+                return Response.AsRedirect("HospitalManage");
             };
             Post["HospitalEdit/"] = _ =>
             {
+                ViewBag["permission"] = ((UserIdentity)this.Context.CurrentUser).Permission;
                 HospitalManageViewModel.Update(Request.Form);
-                this.Hospitals = HospitalManageViewModel.GetData();
-                ViewBag["permission"] = ((UserIdentity)this.Context.CurrentUser).Permission; ;
-                return View["HospitalManage", this.Hospitals];
+                return Response.AsRedirect("HospitalManage");
             };
             Post["HospitalDelete/{HospitalID}"] = p =>
             {
-                var reponseMode = new ResponseModel();
-                var model = this.Hospitals?.FirstOrDefault(t => t.ID == p.HospitalID);
-                if (model != null)
-                {
-                    if (HospitalManageViewModel.Delete(model))
-                    {
-                        this.Hospitals = HospitalManageViewModel.GetData();
-                        reponseMode.Success = true;
-                    }
-                }
-                return Response.AsJson(reponseMode);
+                var model = HospitalManageViewModel.GetData()?.FirstOrDefault(t => t.ID == p.HospitalID);
+                return (model != null) ? HospitalManageViewModel.Delete(model) : false;
             };
+            #endregion
 
+            #region VersionManageRemote
             Get["VersionManage/{HospitalID}"] = p =>
             {
-                var models = VersionManageViewModel.GetModels(p.HospitalID);
-                Session["versionModels"] = models;
-                return View["VersionManage", models];
+                var versionModels = VersionManageViewModel.GetModels(p.HospitalID);
+                var hospitalModel = HospitalManageViewModel.GetData()?.FirstOrDefault(s => s.ID == p.HospitalID);
+                Session["versionModels"] = versionModels;
+                ViewBag["NewestVersion"] = hospitalModel.NewestVersion;
+                return View["VersionManage", versionModels];
             };
             Get["VersionEdit/{VersionID}"] = p =>
             {
-                var models = (List<VersionModel>)Session["versionModels"];
-                var model = models == null ? null : models.FirstOrDefault(s => s.ID == p.VersionID);
-                if (model != null)
-                {
-                    return View["VersionEdit", model];
-                }
-                return View["HospitalManage", this.Hospitals];
+                var model = VersionManageViewModel.GetModel(p.VersionID);
+                return (model != null) ? View["VersionEdit", model] : View["VersionManage/" + model.HospitalID];
             };
-            Post["VersionEdits/"] = _ =>
+            Post["VersionEdit"] = _ =>
             {
                 VersionManageViewModel.Update(Request.Form);
-                this.Hospitals = HospitalManageViewModel.GetData();
-                ViewBag["permission"] = ((UserIdentity)this.Context.CurrentUser).Permission; ;
-                return View["HospitalManage", this.Hospitals];
+                ViewBag["permission"] = ((UserIdentity)this.Context.CurrentUser).Permission;
+                string url = string.Format("VersionManage/{0}", Request.Form["HospitalID"]);
+                return Response.AsRedirect(url);
             };
-            Post["VersionDelete/{VersionID}"] = p =>
+            Post["VersionDelete/{VersionID}/{HospitalID}"] = p =>
             {
-                return null;
+                var errorMsg = VersionManageViewModel.Delete(p.VersionID, p.HospitalID);
+                return (!string.IsNullOrEmpty(errorMsg)) ? errorMsg : null;
             };
 
-
+            Post["VersionSet/{VersionNumber}/{HospitalID}"] = p =>
+            {
+                return VersionManageViewModel.Set(p.VersionNumber, p.HospitalID);
+            };
             #endregion
 
             #region UpLoadRemote
@@ -233,7 +156,7 @@ namespace AutoUpdateServer.Modules
                 return View["HospitalFileUpLoad"];
             };
 
-            Post["api/HospitalFileUpLoad"] = p =>
+            Post["api/HospitalFileUpLoadBaseModel"] = p =>
             {
                 var model = new ResponseModel();
                 if (HospitalFileUpLoadViewModel.instance.IsRuning)
@@ -245,33 +168,32 @@ namespace AutoUpdateServer.Modules
                 {
                     lock (HospitalFileUpLoadViewModel.instance)
                     {
-                        string user = Request.Session["userName"].ToString();
-                        model = HospitalFileUpLoadViewModel.instance.BatchFile(Request.Files, user);
+                        model = HospitalFileUpLoadViewModel.instance.BatchBaseModel(Request.Files, this.Context.CurrentUser.UserName);
+                    }
+                }
+                return Response.AsJson<ResponseModel>(model);
+            };
+
+            Post["api/HospitalFileUpLoadOther"] = p =>
+            {
+                var model = new ResponseModel();
+                if (HospitalFileUpLoadViewModel.instance.IsRuning)
+                {
+                    model.Success = false;
+                    model.Msg = "服务端正在文件处理，请稍后再上传";
+                }
+                else
+                {
+                    lock (HospitalFileUpLoadViewModel.instance)
+                    {
+                        model = HospitalFileUpLoadViewModel.instance.BatchFile(Request.Files, this.Context.CurrentUser.UserName);
                     }
                 }
                 return Response.AsJson<ResponseModel>(model);
             };
             #endregion
 
-            #region Other
-            Get["api/down/{name}"] = _ =>
-            {
-                string fileName = _.name;
-                var relatePath = @"Content\uploads\" + fileName;
-                return Response.AsFile(relatePath);
-            };
 
-            //Get["/show"] = _ =>
-            //{
-            //    var folder = new DirectoryInfo(uploadRootDirectory);
-            //    IList<string> files = new List<string>();
-            //    foreach (var file in folder.GetFiles())
-            //    {
-            //        files.Add(file.Name);
-            //    }
-            //    return View["Show", files];
-            //};
-            #endregion
         }
     }
 }

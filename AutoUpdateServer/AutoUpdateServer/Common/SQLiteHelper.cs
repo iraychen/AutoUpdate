@@ -66,12 +66,18 @@ namespace AutoUpdateServer.Common
             query = query.Where(p => p.HospitalID == hospitalID);
             return query.Take(limit).ToList();
         }
+        public static List<VersionModel> VersionQuery(string ID)
+        {
+            var query = db.Table<VersionModel>();
+            query = query.Where(p => p.ID == ID);
+            return query.ToList();
+        }
 
-        public static List<DLLModel> DLLQuery(int limit, string versionID)
+        public static List<DLLModel> DLLQuery(string versionID)
         {
             var query = db.Table<DLLModel>();
             query = query.Where(p => p.VersionID == versionID);
-            return query.Take(limit).ToList();
+            return query.ToList();
         }
 
         public static List<HospitalModel> HospitalQuery(int limit, string name = null)
@@ -82,6 +88,13 @@ namespace AutoUpdateServer.Common
                 query = query.Where(p => p.Name == name);
             }
             return query.Take(limit).ToList();
+        }
+
+        public static List<HospitalModel> HospitalQuery(int ID)
+        {
+            var query = db.Table<HospitalModel>();
+            query = query.Where(p => p.ID == ID);
+            return query.ToList();
         }
 
         public static bool Insert<T>(T info)
@@ -155,7 +168,7 @@ namespace AutoUpdateServer.Common
                 db.Update(info);
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 return false;
             }
@@ -179,7 +192,7 @@ namespace AutoUpdateServer.Common
             Dispose();
         }
 
-        public  void Dispose()
+        public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);

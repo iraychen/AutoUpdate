@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AutoUpdateServer.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -10,5 +11,10 @@ namespace AutoUpdateServer.Reponse.Model
         public bool Success { get; set; }
     
         public string Msg { get; set; }
+    }
+
+    public class DownLoadNewestResponseModel : ResponseModel
+    {
+        public NewestVersionModel Data { get; set; } = new NewestVersionModel();
     }
 }

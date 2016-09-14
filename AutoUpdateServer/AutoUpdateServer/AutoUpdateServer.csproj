@@ -366,6 +366,7 @@
     <Compile Include="Model\DLLModel.cs" />
     <Compile Include="Model\HospitalModel.cs" />
     <Compile Include="Model\Config\CompareInfoConfig.cs" />
+    <Compile Include="Model\NewestVersionModel.cs" />
     <Compile Include="Model\Reponse\ResponseModel.cs" />
     <Compile Include="Model\UpdatePackageInfo.cs" />
     <Compile Include="Model\UserModel.cs" />
@@ -381,13 +382,16 @@
     </Compile>
     <Compile Include="UserIdentity.cs" />
     <Compile Include="UserMapper.cs" />
+    <Compile Include="ViewModel\ClientUpdateViewModel.cs" />
     <Compile Include="ViewModel\HospitalManageViewModel.cs" />
     <Compile Include="ViewModel\LoginViewModel.cs" />
     <Compile Include="ViewModel\HospitalFileUpLoadViewModel.cs" />
     <Compile Include="ViewModel\UserManageViewModel.cs" />
     <Compile Include="ViewModel\VersionManageViewModel.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Content\DownLoad\" />
+  </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>

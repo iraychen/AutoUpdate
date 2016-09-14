@@ -1,19 +1,20 @@
 ﻿@{
     Layout = null;
 }
-
+@inherits Nancy.ViewEngines.Razor.NancyRazorViewBase
+@inherits Nancy.ViewEngines.Razor.NancyRazorViewBase<AutoUpdateServer.Model.VersionModel>
 <!DOCTYPE html>
 
 <html>
 <head>
     <meta name="viewport" content="width=device-width" charset="utf-8" />
-    <link rel="stylesheet" type="text/css" href="Content/Css/bootstrap.css" />
-    <link rel="stylesheet" type="text/css" href="Content/Css/bootstrap-responsive.css" />
-    <link rel="stylesheet" type="text/css" href="Content/Css/style.css" />
-    <script type="text/javascript" src="Content/Js/jquery.js"></script>
-    <script type="text/javascript" src="Content/Js/bootstrap.js"></script>
-    <script type="text/javascript" src="Content/Js/ckform.js"></script>
-    <script type="text/javascript" src="Content/Js/common.js"></script>
+    <link rel="stylesheet" type="text/css" href="../../Content/Css/bootstrap.css" />
+    <link rel="stylesheet" type="text/css" href="../../Content/Css/bootstrap-responsive.css" />
+    <link rel="stylesheet" type="text/css" href="../../Content/Css/style.css" />
+    <script type="text/javascript" src="../../Content/Js/jquery.js"></script>
+    <script type="text/javascript" src="../../Content/Js/bootstrap.js"></script>
+    <script type="text/javascript" src="../../Content/Js/ckform.js"></script>
+    <script type="text/javascript" src="../../Content/Js/common.js"></script>
 
     <style type="text/css">
         body {
@@ -34,16 +35,43 @@
     </style>
 </head>
 <body>
-    <form action="/UserAdd" class="definewidth m20">
+    <form action="../VersionEdit" method="post" class="definewidth m20">
         <table class="table table-bordered table-hover definewidth m10">
             <tr>
-                <td class="tableleft">版本信息</td>
-                <td><input type="text" id="versionIntroduce" name="versionIntroduce"/></td>
+                <td class="tableleft">医院编号：</td>
+                <td>
+                    <input name="ID" value="@Model.ID" style="display:none" />
+                    <input name="HospitalID" value="@Model.HospitalID" type="text" />
+                </td>
+            </tr>
+            <tr>
+                <td class="tableleft">版本编号：</td>
+                <td>
+                    <input name="Number" value="@Model.Number" type="text" />
+                </td>
+            </tr>
+            <tr>
+                <td class="tableleft">上传时间：</td>
+                <td>
+                    <input name="UpLoadTime" value="@Model.UpLoadTime" type="text" />
+                </td>
+            </tr>
+            <tr>
+                <td class="tableleft">上传人：</td>
+                <td>
+                    <input name="User" value="@Model.User" type="text" />
+                </td>
+            </tr>
+            <tr>
+                <td class="tableleft">版本信息：</td>
+                <td>
+                    <textarea type="text" name="Description" style="min-width:500px;min-height:200px">@Model.Description</textarea>
+                </td>
             </tr>
             <tr>
                 <td class="tableleft"></td>
                 <td>
-                    <button  class="btn btn-primary" type="button" onclick="AddVersionIntroduce()">保存</button> &nbsp;&nbsp;<button type="button" class="btn btn-success" name="backid" id="backid">返回列表</button>
+                    <button type="submit" class="btn btn-primary" type="button">保存</button> &nbsp;&nbsp;<button type="button" class="btn btn-success" name="backid" id="backid">返回列表</button>
                 </td>
             </tr>
         </table>
@@ -51,29 +79,16 @@
 </body>
 </html>
 <script>
-    var right=false;
+    var right = false;
     $(function () {
+        $("input[name=HospitalID]").attr("readonly", "readonly");
+        $("input[name=Number]").attr("readonly", "readonly");
+        $("input[name=UpLoadTime]").attr("readonly", "readonly");
+        $("input[name=User]").attr("readonly", "readonly");
         $('#backid').click(function () {
-            window.location.href = "../VersionManage";
+            var hospitalID = $("input[name='HospitalID']").val()
+            window.location.href = "../VersionManage/" + hospitalID;
         });
     });
-
-    function AddVersionIntroduce()
-    {
-        var versionIntroduce = $("input[name='versionIntroduce']").val();
-        $.ajax({
-            type: "post",
-            url: "UserAdd/" + name + "/" + fpwd + "/" + status,
-            dataType: "json",
-            success: function (data) {
-                if (data.success == true) {
-                    window.location = "../UserManage";
-                }
-                else {
-                    right = false;
-                }
-            }
-        });
-    }
 
 </script>

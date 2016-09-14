@@ -14,14 +14,22 @@ namespace AutoUpdateServer.ViewModel
             return SQLiteHelper.HospitalQuery(100, name);
         }
 
-        public static bool Insert(int id,string name)
+        public static bool Insert(int id, string name)
         {
-            return SQLiteHelper.Insert<HospitalModel>(new HospitalModel { ID = id,Name=name});
+            return SQLiteHelper.Insert<HospitalModel>(new HospitalModel { ID = id, Name = name });
         }
 
         public static bool Update(dynamic form)
         {
-            return SQLiteHelper.Update<HospitalModel>(new HospitalModel { ID = int.Parse(form["HospitalID"]) , Name = form["HospitalName"] });
+            var hospitalID = int.Parse(form["HospitalID"]);
+            var model = SQLiteHelper.HospitalQuery(hospitalID)?[0];
+            if (model != null)
+            {
+                model.ID = hospitalID;
+                model.Name = form["HospitalName"];
+                return SQLiteHelper.Update<HospitalModel>(model);
+            }
+            return false;
         }
 
         public static bool Delete(HospitalModel model)

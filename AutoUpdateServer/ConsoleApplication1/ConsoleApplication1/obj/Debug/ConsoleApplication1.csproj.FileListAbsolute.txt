@@ -1,6 +1,0 @@
-F:\AutoUpdate\AutoUpdateServer\ConsoleApplication1\ConsoleApplication1\bin\Debug\ConsoleApplication1.exe.config
-F:\AutoUpdate\AutoUpdateServer\ConsoleApplication1\ConsoleApplication1\bin\Debug\ConsoleApplication1.exe
-F:\AutoUpdate\AutoUpdateServer\ConsoleApplication1\ConsoleApplication1\bin\Debug\ConsoleApplication1.pdb
-F:\AutoUpdate\AutoUpdateServer\ConsoleApplication1\ConsoleApplication1\obj\Debug\ConsoleApplication1.csprojResolveAssemblyReference.cache
-F:\AutoUpdate\AutoUpdateServer\ConsoleApplication1\ConsoleApplication1\obj\Debug\ConsoleApplication1.exe
-F:\AutoUpdate\AutoUpdateServer\ConsoleApplication1\ConsoleApplication1\obj\Debug\ConsoleApplication1.pdb

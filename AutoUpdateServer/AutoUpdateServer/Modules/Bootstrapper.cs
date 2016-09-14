@@ -59,6 +59,5 @@ namespace AutoUpdateServer.Modules
             FormsAuthentication.Enable(pipelines, formsAuthConfiguration);
             CookieBasedSessions.Enable(pipelines);
         }
-
     }
 }

@@ -6,6 +6,7 @@ using System.Web;
 
 namespace AutoUpdateServer.Model
 {
+    [Serializable]
     public class VersionModel
     {
 
@@ -25,5 +26,7 @@ namespace AutoUpdateServer.Model
         public string User { get; set; }
 
         public string Description { get; set; }
+
+        public string AllDLLVersion { get; set; }
     }
 }
