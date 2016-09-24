@@ -52,16 +52,10 @@ namespace AutoUpdateServer.Moudles
 
             #region ClientUpdate
 
-            Get["api/DownLoadNewest/{HopitalID}/{VersionID}"] = p =>
+            Get["api/RequestNewestPackageUrl/{HopitalID}/{OldNumber}"] = p =>
             {
-                DownLoadNewestResponseModel res =ClientUpdateViewModel.DownLoadNewest(p.HopitalID, p.VersionID);
-                return Response.AsJson<DownLoadNewestResponseModel>(res);
-            };
-
-            Get["api/DownLoadNewestCompleted/{Packagename}"] = p =>
-            {
-                ResponseModel res = ClientUpdateViewModel.DeletePackage(p.Packagename);
-                return Response.AsJson<ResponseModel>(res);
+                RequestNewestPackageUrlResponseModel res =ClientUpdateViewModel.RequestNewestPackageUrl(p.HopitalID, p.OldNumber);
+                return Response.AsJson<RequestNewestPackageUrlResponseModel>(res);
             };
 
 

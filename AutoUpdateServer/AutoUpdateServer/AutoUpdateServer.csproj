@@ -324,6 +324,8 @@
     <Content Include="Content\Js\formValidatorRegex.js" />
     <Content Include="Content\Js\jquery.js" />
     <Content Include="packages.config" />
+    <None Include="Properties\PublishProfiles\autoupdate.pubxml" />
+    <None Include="Properties\PublishProfiles\AutoUpdateServer.pubxml" />
     <None Include="Resources\sqlite3_X64.dll" />
     <None Include="Resources\sqlite3_X86.dll" />
     <Content Include="Views\UpLoad.cshtml" />
@@ -351,7 +353,9 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Web.config" />
+    <Content Include="Web.config">
+      <SubType>Designer</SubType>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Common\ConstFile.cs" />

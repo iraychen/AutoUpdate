@@ -44,7 +44,7 @@ namespace AutoUpdateServer.Common
             }
         }
 
-        public static void XMLSave<T>(T data, string filePath) where T : class
+        private static void XMLSave<T>(T data, string filePath) where T : class
         {
             var ser = new XmlSerializer(typeof(T));
             using (StreamWriter sw = new StreamWriter(filePath, false, Encoding.Unicode))

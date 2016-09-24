@@ -14,15 +14,14 @@ namespace AutoUpdateServer.Common
         private static SQLiteConnection db;
         public int YearMonth { get; }
         private static object _lock = new object();
-        public SQLiteHelper()
+        public  SQLiteHelper()
         {
-
+            
         }
 
         public static void Init(DirectoryInfo dir)
         {
             CoreFileCopy();
-
             if (!dir.Exists)
             {
                 dir.Create();
@@ -35,7 +34,8 @@ namespace AutoUpdateServer.Common
         private static void CoreFileCopy()
         {
             var in64Bit = (IntPtr.Size == 8);
-            File.WriteAllBytes("sqlite3.dll",
+            string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"sqlite3.dll");
+            File.WriteAllBytes(path,
                 in64Bit ? Properties.Resources.sqlite3_X64 : Properties.Resources.sqlite3_X86);
         }
 
@@ -66,6 +66,7 @@ namespace AutoUpdateServer.Common
             query = query.Where(p => p.HospitalID == hospitalID);
             return query.Take(limit).ToList();
         }
+
         public static List<VersionModel> VersionQuery(string ID)
         {
             var query = db.Table<VersionModel>();

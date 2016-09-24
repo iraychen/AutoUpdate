@@ -45,7 +45,6 @@ namespace AutoUpdateServer.ViewModel
                 var currentVersionModel = versionModels?.FirstOrDefault(p => p.ID == versionID);
                 if (currentVersionModel != null)
                 {
-                    //删除仓库中无用文件
                     var nextNumber = AddVersion(currentVersionModel.Number);
                     var nextVersionModel = versionModels?.FirstOrDefault(p => p.Number == nextNumber && p.HospitalID == hospitalID);
                     versionModels.Remove(currentVersionModel);
@@ -98,9 +97,16 @@ namespace AutoUpdateServer.ViewModel
                                     {
                                         var number = lastAllDLLVersionDictionary[item.Key];
                                         var rollBackDestFilePath = Path.Combine(ConstFile.WorkPath, hospitalID.ToString(), item.Key);
-                                        var rollBackSourceFileName = string.Format("{0}-{1}{2}", Path.GetFileNameWithoutExtension(item.Key), number, Path.GetExtension(item.Key));
                                         var rollBackSourceFilePath = string.Empty;
-                                        rollBackSourceFilePath = Path.Combine(ConstFile.WareHousePath, hospitalID.ToString(), Path.GetDirectoryName(item.Key), rollBackSourceFileName);
+                                        if (number == ConstFile.BASEVERSION)
+                                        {
+                                            rollBackSourceFilePath = Path.Combine(ConstFile.BaseFilePath, item.Key);
+                                        }
+                                        else
+                                        {
+                                            var rollBackSourceFileName = string.Format("{0}-{1}{2}", Path.GetFileNameWithoutExtension(item.Key), number, Path.GetExtension(item.Key));
+                                            rollBackSourceFilePath = Path.Combine(ConstFile.WareHousePath, hospitalID.ToString(), Path.GetDirectoryName(item.Key), rollBackSourceFileName);
+                                        }
                                         var rollBackSourceFileInfo = new FileInfo(rollBackSourceFilePath);
                                         rollBackSourceFileInfo.CopyTo(rollBackDestFilePath, true);
                                     }
@@ -111,8 +117,10 @@ namespace AutoUpdateServer.ViewModel
                         else
                         {
                             //全部删除
-                            Directory.Delete(Path.Combine(ConstFile.WorkPath, hospitalID.ToString()),true);
-                            Directory.Delete(Path.Combine(ConstFile.WareHousePath, hospitalID.ToString()),true);
+                            if(Directory.Exists(Path.Combine(ConstFile.WorkPath, hospitalID.ToString())))
+                                Directory.Delete(Path.Combine(ConstFile.WorkPath, hospitalID.ToString()),true);
+                            if (Directory.Exists(Path.Combine(ConstFile.WareHousePath, hospitalID.ToString())))
+                                Directory.Delete(Path.Combine(ConstFile.WareHousePath, hospitalID.ToString()),true);
                         }
                         var hospitalModel = SQLiteHelper.HospitalQuery(currentVersionModel.HospitalID)?[0];
                         hospitalModel.NewestVersion = newestNumber;

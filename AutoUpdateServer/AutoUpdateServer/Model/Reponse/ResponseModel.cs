@@ -13,7 +13,7 @@ namespace AutoUpdateServer.Reponse.Model
         public string Msg { get; set; }
     }
 
-    public class DownLoadNewestResponseModel : ResponseModel
+    public class RequestNewestPackageUrlResponseModel : ResponseModel
     {
         public NewestVersionModel Data { get; set; } = new NewestVersionModel();
     }

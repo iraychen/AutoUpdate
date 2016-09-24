@@ -156,7 +156,7 @@ namespace AutoUpdateServer.Modules
                 return View["HospitalFileUpLoad"];
             };
 
-            Post["api/HospitalFileUpLoadBaseModel"] = p =>
+            Post["api/HospitalFileUpLoadBaseModelFile"] = p =>
             {
                 var model = new ResponseModel();
                 if (HospitalFileUpLoadViewModel.instance.IsRuning)
@@ -168,13 +168,13 @@ namespace AutoUpdateServer.Modules
                 {
                     lock (HospitalFileUpLoadViewModel.instance)
                     {
-                        model = HospitalFileUpLoadViewModel.instance.BatchBaseModel(Request.Files, this.Context.CurrentUser.UserName);
+                        model = HospitalFileUpLoadViewModel.instance.BatchBaseModelFile(Request.Files, this.Context.CurrentUser.UserName);
                     }
                 }
                 return Response.AsJson<ResponseModel>(model);
             };
 
-            Post["api/HospitalFileUpLoadOther"] = p =>
+            Post["api/HospitalFileUpLoad"] = p =>
             {
                 var model = new ResponseModel();
                 if (HospitalFileUpLoadViewModel.instance.IsRuning)
@@ -192,8 +192,6 @@ namespace AutoUpdateServer.Modules
                 return Response.AsJson<ResponseModel>(model);
             };
             #endregion
-
-
         }
     }
 }

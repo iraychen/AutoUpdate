@@ -1,18 +1,14 @@
 ﻿using AutoUpdateServer.Common;
-using AutoUpdateServer.Config.Model;
-using AutoUpdateServer.Enum;
 using AutoUpdateServer.Model;
 using AutoUpdateServer.Reponse.Model;
 using Nancy;
 using Newtonsoft.Json;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
-using System.Threading;
 
 namespace AutoUpdateServer.ViewModel
 {
@@ -91,9 +87,9 @@ namespace AutoUpdateServer.ViewModel
             //3.修改本地配置
             var lastVersionModel = new VersionModel();
             var number = ConstFile.BASEVERSION;
-            var newestAlldllVersionDictionary = new Dictionary<string, string>();
+            var newestAllDLLVersionDictionary = new Dictionary<string, string>();
             var newestFileDirectoryInfo = new DirectoryInfo(newestFileDirectoryPath);
-            GetFileNameDictionary(newestFileDirectoryInfo, newestAlldllVersionDictionary, ConstFile.BASEVERSION, hospitalID.ToString());
+            GetFileNameDictionary(newestFileDirectoryInfo, newestAllDLLVersionDictionary, ConstFile.BASEVERSION, hospitalID.ToString());
             var newesterVsionModel = new VersionModel
             {
                 ID = DateTime.Now.ToString("yyyyMMddhhmmssffff"),
@@ -109,79 +105,82 @@ namespace AutoUpdateServer.ViewModel
             //  B【不变】.上传文件和本地文件都存在，对比相同，不复制文件，设置上传文件version为老版本文件的version（存入数据库时）
             //  C【新增】.上传文件存在，本地文件不存在，则把最新的文件复制到work目录和仓库目录，并且设置上传文件version为最新version（存入数据库时）
             //  D【删除】.上传文件不存在，本地文件存在。暂时不操作。
-            var oldAlldllVersionDictionary = new Dictionary<string, string>();
+            var oldAllDLLVersionDictionary = new Dictionary<string, string>();
             var workPath = Path.Combine(ConstFile.WorkPath, hospitalID.ToString());
 
             if (versionModels.Count != 0)
             {
                 lastVersionModel = versionModels.FirstOrDefault(p => p.ID == versionModels.Max(t => t.ID));
                 number = AddVersion(lastVersionModel.Number);
-            }
-
-            if (!Directory.Exists(workPath) || Directory.GetDirectories(workPath).Length + Directory.GetFiles(workPath).Length == 0)
-            {
-
-                if (Directory.Exists(oldFilesDirectoryPath))
-                {
-                    Directory.Delete(oldFilesDirectoryPath, true);
-                }
-                var baseModel = SQLiteHelper.VersionQuery("BaseModel")[0];
-                oldAlldllVersionDictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(baseModel.AllDLLVersion);
-                oldFilesDirectoryPath = ConstFile.BaseFilePath;
+                oldAllDLLVersionDictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(lastVersionModel.AllDLLVersion);
             }
             else
             {
-                oldAlldllVersionDictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(lastVersionModel.AllDLLVersion);
+                var baseModel = SQLiteHelper.VersionQuery("BaseModel")[0];
+                oldAllDLLVersionDictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(baseModel.AllDLLVersion);
+                number = AddVersion(baseModel.Number);
             }
 
+
             var tempdllVersionDictionary = new Dictionary<string, string>();
-            foreach (var key in newestAlldllVersionDictionary.Keys)
+            foreach (var item in newestAllDLLVersionDictionary)
             {
-                var newestFilePath = Path.Combine(newestFileDirectoryPath, key);
+                var newestFilePath = Path.Combine(newestFileDirectoryPath, item.Key);
                 var newestFileInfo = new FileInfo(newestFilePath);
-                var localFilePath = Path.Combine(oldFilesDirectoryPath, key);
+                if (oldAllDLLVersionDictionary.Keys.Contains(item.Key) && oldAllDLLVersionDictionary[item.Key] == ConstFile.BASEVERSION)
+                {
+                    oldFilesDirectoryPath = ConstFile.BaseFilePath;
+                }
+                var localFilePath = Path.Combine(oldFilesDirectoryPath, item.Key);
                 if (File.Exists(localFilePath))
                 {
                     var localFileInfo = new FileInfo(localFilePath);
                     if (!isTheSame(newestFileInfo, localFileInfo))
                     {
-                        FileCopy(newestFileInfo, hospitalID.ToString(), number, workPath, key);
-                        tempdllVersionDictionary.Add(key, number);
+                        FileCopy(newestFileInfo, hospitalID.ToString(), number, workPath, item.Key);
+                        tempdllVersionDictionary.Add(item.Key, number);
                     }
                     else
-                    {
-                        tempdllVersionDictionary.Add(key, oldAlldllVersionDictionary[key]);
+                    { 
+                        tempdllVersionDictionary.Add(item.Key, oldAllDLLVersionDictionary[item.Key]);
                     }
-                    //oldAlldllVersionDictionary.Remove(key);
+                    oldAllDLLVersionDictionary.Remove(item.Key);
                 }
                 else
                 {
-                    FileCopy(newestFileInfo, hospitalID.ToString(), number, workPath, key);
-                    tempdllVersionDictionary.Add(key, number);
+                    FileCopy(newestFileInfo, hospitalID.ToString(), number, workPath, item.Key);
+                    tempdllVersionDictionary.Add(item.Key, number);
                 }
             }
+            // 删除的文件
+            var deleteKey = new List<string>();
+            foreach (var item in oldAllDLLVersionDictionary)
+            {
+                if (item.Value != ConstFile.BASEVERSION)
+                {
+                    deleteKey.Add(item.Key);
+                }
+            }
+            deleteKey.ForEach(p=>oldAllDLLVersionDictionary.Remove(p));
+
             foreach (var key in tempdllVersionDictionary.Keys)
             {
-                if (oldAlldllVersionDictionary.Keys.Contains(key))
+                if (oldAllDLLVersionDictionary.Keys.Contains(key))
                 {
-                    oldAlldllVersionDictionary[key] = tempdllVersionDictionary[key];
+                    oldAllDLLVersionDictionary[key] = tempdllVersionDictionary[key];
                     continue;
                 }
-                oldAlldllVersionDictionary.Add(key, tempdllVersionDictionary[key]);
+                oldAllDLLVersionDictionary.Add(key, tempdllVersionDictionary[key]);
             }
-            //剩下删除的文件
-            //foreach (var key in oldAlldllVersionDictionary)
-            //{
-            //    oldAlldllVersionDictionary
-            //}
+
 
             hospitalModel.NewestVersion = number;
             newesterVsionModel.Number = number;
-            newesterVsionModel.AllDLLVersion = JsonConvert.SerializeObject(oldAlldllVersionDictionary);
+            newesterVsionModel.AllDLLVersion = JsonConvert.SerializeObject(oldAllDLLVersionDictionary);
             SQLiteHelper.Insert<VersionModel>(newesterVsionModel);
             SQLiteHelper.Update<HospitalModel>(hospitalModel);
         }
-        internal ResponseModel BatchBaseModel(IEnumerable<HttpFile> files, string userName)
+        internal ResponseModel BatchBaseModelFile(IEnumerable<HttpFile> files, string userName)
         {
             var responseModel = new ResponseModel();
             foreach (var file in files)
@@ -238,8 +237,6 @@ namespace AutoUpdateServer.ViewModel
             return responseModel;
 
         }
-
-
         private static string AddVersion(string newestVersion)
         {
             //1.version 命名规则(2.0.0)2不变，递增
@@ -265,13 +262,17 @@ namespace AutoUpdateServer.ViewModel
             //复制成新的更新包文件(生成相对的文件目录，因为可能出现不同文件夹同名文件)，复制到WORK目录
             var newestPackageFileName = string.Format("{0}-{1}{2}", Path.GetFileNameWithoutExtension(newestFileInfo.Name), version, Path.GetExtension(newestFileInfo.Name));
             var newestPackageFileInfo = new FileInfo(Path.Combine(ConstFile.WareHousePath, hospitalID, Path.GetDirectoryName(path), newestPackageFileName));
-            var dir = newestPackageFileInfo.Directory;
-            if (!dir.Exists)
-                dir.Create();
+            var newestFileDir = newestPackageFileInfo.Directory;
+            if (!newestFileDir.Exists)
+                newestFileDir.Create();
             newestFileInfo.CopyTo(newestPackageFileInfo.FullName, true);
 
-            var workFilePath = Path.Combine(workPath, Path.GetDirectoryName(path));
-            newestFileInfo.CopyTo(workPath, true);
+            var workFilePath = Path.Combine(workPath, path);
+            var workFileInfo = new FileInfo(workFilePath);
+            var workFileDir = workFileInfo.Directory;
+            if (!workFileDir.Exists)
+                workFileDir.Create();
+            newestFileInfo.CopyTo(workFileInfo.FullName, true);
         }
         private static void SaveFile(HttpFile file, string zipPath)
         {
