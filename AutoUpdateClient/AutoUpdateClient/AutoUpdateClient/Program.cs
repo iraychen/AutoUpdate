@@ -18,8 +18,9 @@ namespace AutoUpdateClient
     {
         static void Main(string[] args)
         {
-            var AutoUpdateTimer = new Timer(new TimerCallback(Modifier.CheckUpdate), null, 0, 1000000);//一小时
-            //var ClientMonitorTimer = new Timer(new TimerCallback(Monitor.checkClientAlive), null, 0, 10000);
+            Console.WindowWidth = 150;
+            var AutoUpdateTimer = new Timer(new TimerCallback(Modifier.CheckUpdate), null, 0, int.Parse(UserConfigInstance.instance.UserConfig.CheckUpdateTime));
+            var ClientMonitorTimer = new Timer(new TimerCallback(Monitor.CheckClientAlive), null, 0, int.Parse(UserConfigInstance.instance.UserConfig.CheckClientAliveTime));
             Console.ReadKey();
         }
     }

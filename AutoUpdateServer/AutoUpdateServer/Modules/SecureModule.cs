@@ -68,6 +68,49 @@ namespace AutoUpdateServer.Modules
             };
             #endregion
 
+            #region RoleManage
+            Get["RoleManage"] = _ =>
+            {
+                ViewBag["permission"] = ((UserIdentity)this.Context.CurrentUser).Permission;
+                return View["RoleManage", RoleManageViewModel.GetData()];
+            };
+            Post["QueryRole"] = p =>
+            {
+                ViewBag["permission"] = ((UserIdentity)this.Context.CurrentUser).Permission;
+                string name = Request.Form["name"];
+                var users = UserManageViewModel.GetData(name);
+                return View["RoleManage", users];
+            };
+            Post["checkUserName/{Name}"] = p =>
+            {
+                return (UserManageViewModel.GetData()?.FirstOrDefault(t => t.Name == p.Name) != null);
+            };
+            Get["RoleAdd"] = _ =>
+            {
+                return View["RoleAdd"];
+            };
+            Post["RoleAdd/{Name}/{PassWord}/{Status}"] = p =>
+            {
+                return UserManageViewModel.Insert(p.Name, p.PassWord, p.Status);
+            };
+            Get["RoleEdit"] = p =>
+            {
+                // var users = UserManageViewModel.GetData();
+                return View["RoleEdit"]; 
+            };
+            Post["RoleEdit"] = _ =>
+            {
+                UserManageViewModel.Update(Request.Form);
+                return Response.AsRedirect("UserManage");
+            };
+            Post["RoleDelete/{Name}"] = p =>
+            {
+                var model = UserManageViewModel.GetData()?.FirstOrDefault(t => t.Name == p.Name);
+                return (model != null) && (UserManageViewModel.Delete(model));
+            };
+
+            #endregion
+
             #region HospitalManagerRemote
             Get["HospitalManage"] = _ =>
             {

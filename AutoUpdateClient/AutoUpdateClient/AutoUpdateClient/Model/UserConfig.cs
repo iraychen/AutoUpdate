@@ -13,5 +13,9 @@ namespace AutoUpdateClient.Model
         public string HospitalID { get; set; }
 
         public string Version { get; set; }
+
+        public string CheckClientAliveTime { get; set; }
+
+        public string CheckUpdateTime { get; set; }
     }
 }

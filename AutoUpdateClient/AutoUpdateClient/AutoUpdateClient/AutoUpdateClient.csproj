@@ -53,6 +53,7 @@
     <Compile Include="Common\FileUtil.cs" />
     <Compile Include="Common\LogHelper.cs" />
     <Compile Include="Common\StreamString.cs" />
+    <Compile Include="Common\UserConfigInstance.cs" />
     <Compile Include="Common\ZipHelper.cs" />
     <Compile Include="Model\Response.cs" />
     <Compile Include="Model\UserConfig.cs" />

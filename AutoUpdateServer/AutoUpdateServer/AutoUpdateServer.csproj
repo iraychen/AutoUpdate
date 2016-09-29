@@ -345,6 +345,9 @@
     <Content Include="Views\HospitalAdd.cshtml" />
     <Content Include="Views\HospitalEdit.cshtml" />
     <Content Include="Views\VersionEdit.cshtml" />
+    <Content Include="Views\RoleManage.cshtml" />
+    <Content Include="Views\RoleAdd.cshtml" />
+    <Content Include="Views\RoleEdit.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -372,6 +375,7 @@
     <Compile Include="Model\Config\CompareInfoConfig.cs" />
     <Compile Include="Model\NewestVersionModel.cs" />
     <Compile Include="Model\Reponse\ResponseModel.cs" />
+    <Compile Include="Model\RoleModel.cs" />
     <Compile Include="Model\UpdatePackageInfo.cs" />
     <Compile Include="Model\UserModel.cs" />
     <Compile Include="Model\VersionModel.cs" />
@@ -390,6 +394,7 @@
     <Compile Include="ViewModel\HospitalManageViewModel.cs" />
     <Compile Include="ViewModel\LoginViewModel.cs" />
     <Compile Include="ViewModel\HospitalFileUpLoadViewModel.cs" />
+    <Compile Include="ViewModel\RoleManageViewModel.cs" />
     <Compile Include="ViewModel\UserManageViewModel.cs" />
     <Compile Include="ViewModel\VersionManageViewModel.cs" />
   </ItemGroup>

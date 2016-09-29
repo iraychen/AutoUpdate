@@ -1,0 +1,145 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" charset="utf-8" />
+    <link rel="stylesheet" type="text/css" href="Content/Css/bootstrap.css" />
+    <link rel="stylesheet" type="text/css" href="Content/Css/bootstrap-responsive.css" />
+    <link rel="stylesheet" type="text/css" href="Content/Css/style.css" />
+    <script type="text/javascript" src="Content/Js/jquery.js"></script>
+    <script type="text/javascript" src="Content/Js/bootstrap.js"></script>
+    <script type="text/javascript" src="Content/Js/ckform.js"></script>
+    <script type="text/javascript" src="Content/Js/common.js"></script>
+
+    <style type="text/css">
+        body {
+            padding-bottom: 40px;
+        }
+
+        .sidebar-nav {
+            padding: 9px 0;
+        }
+
+
+        /* Enable use of floated navbar text */
+        .navbar-text.pull-right {
+            float: none;
+            padding-left: 5px;
+            padding-right: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <form action="index.html" method="post" class="definewidth m20">
+        <table class="table table-bordered table-hover definewidth m10">
+            <tr>
+                <td width="10%" class="tableleft">角色名称</td>
+                <td><input type="text" name="title" /></td>
+            </tr>
+            <tr>
+                <td class="tableleft">状态</td>
+                <td>
+                    <input type="radio" name="status" value="1" checked /> 启用  <input type="radio" name="status" value="0" /> 禁用
+                </td>
+            </tr>
+            <tr>
+                <td class="tableleft">权限</td>
+                <td>
+                    <ul>
+                        <li>
+                            <label class='checkbox inline'><input type='checkbox' name='group[]' value='' />角色管理</label>
+                            <ul>
+                                <li>
+                                    <label class='checkbox inline'><input type='checkbox' name='node' value='RoleAdd'    />角色新增</label>
+                                <li>
+                                    <label class='checkbox inline'><input type='checkbox' name='node' value='RoleEdit'   />角色编辑</label>
+                                <li>
+                                    <label class='checkbox inline'><input type='checkbox' name='node' value='RoleDelete' />角色删除</label>
+                                <li> 
+                                    <label class='checkbox inline'><input type='checkbox' name='node' value='RoleView'   />角色查看</label>
+                            </ul>
+                        </li>
+                        <li>
+                            <label class='checkbox inline'><input type='checkbox' name='group[]' value='' />用户管理</label>
+                            <ul>
+                                <li>
+                                    <label class='checkbox inline'><input type='checkbox' name='node' value='UserAdd'  />用户新增</label>
+                                <li>
+                                    <label class='checkbox inline'><input type='checkbox' name='node' value='UserEdit' />用户编辑</label>
+                                <li>
+                                    <label class='checkbox inline'><input type='checkbox' name='node' value='UserDelete'/>用户删除</label>
+                                <li>
+                                    <label class='checkbox inline'><input type='checkbox' name='node' value='UserView' />用户查看</label>
+                            </ul>
+                        </li>
+                        <li>
+                            <label class='checkbox inline'><input type='checkbox' name='group[]' value='' />医院管理</label>
+                            <ul>
+                                <li>
+                                    <label class='checkbox inline'><input type='checkbox' name='node' value='HospitalAdd'    />医院新增</label>
+                                <li>
+                                    <label class='checkbox inline'><input type='checkbox' name='node' value='HospitalEdit'   />医院编辑</label>
+                                <li>
+                                    <label class='checkbox inline'><input type='checkbox' name='node' value='HospitalDelete' />医院删除</label>
+                                <li>
+                                    <label class='checkbox inline'><input type='checkbox' name='node' value='HospitalView'   />医院查看</label>
+                            </ul>
+                        </li>
+                        <li>
+                            <label class='checkbox inline'><input type='checkbox' name='group[]' value='' />版本管理</label>
+                            <ul>
+                                <li>
+                                    <label class='checkbox inline'><input type='checkbox' name='node' value='VersionAdd'   />版本新增</label>
+                                <li>
+                                    <label class='checkbox inline'><input type='checkbox' name='node' value='VersionEdit'  />版本编辑</label>
+                                <li>
+                                    <label class='checkbox inline'><input type='checkbox' name='node' value='VersionDelete'/>版本删除</label>
+                                <li>
+                                    <label class='checkbox inline'><input type='checkbox' name='node' value='VersionView'  />版本查看</label>
+                            </ul>
+                        </li>
+                        <li>
+                            <label class='checkbox inline'><input type='checkbox' name='group[]' value='' />上传版本</label>
+                            <ul>
+                                <li>
+                                    <label class='checkbox inline'><input type='checkbox' name='node' value='UploadAdd'    />上传基础版本</label>
+                                <li>
+                                    <label class='checkbox inline'><input type='checkbox' name='node' value='UploadEdit'   />上传普通版本</label>
+                            </ul>
+                        </li>                                                                                      
+                    </ul>
+                </td>                                                                                              
+            </tr>
+            <tr>
+                <td class="tableleft"></td>
+                <td>
+                    <button class="btn btn-primary" type="button" onclick="Save()">保存</button> &nbsp;&nbsp;<button type="button" class="btn btn-success" name="backid" id="backid">返回列表</button>
+                </td>
+            </tr>
+        </table>
+    </form>
+</body>
+</html>
+<script>
+    $(function () {
+        $(':checkbox[name="group[]"]').click(function () {
+            $(':checkbox', $(this).closest('li')).prop('checked', this.checked);
+        });
+        $('#backid').click(function () {
+            window.location.href = "index";
+        });
+    });
+
+    function Save() {
+        var adIds = "";
+        $("input:checkbox[name=node]:checked").each(function (i) {
+            adIds += ("," + $(this).val());
+        });
+        alert(adIds);
+    }
+</script>
